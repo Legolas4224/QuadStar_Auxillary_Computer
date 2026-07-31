@@ -1,0 +1,100 @@
+from picamera2 import Picamera2, Preview
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use("Agg")
+
+class CameraLogic:
+	#Initialise camera
+	def __init__(self, manual=False, config=None):
+		self.picam2 = Picamera2()
+		self.preview_config = self.picam2.create_preview_configuration()
+		self.still_config = self.picam2.create_still_configuration()
+		self.picam2.configure(self.preview_config)
+		self.preview_started = False
+
+	#Start camera
+	def start(self):
+		self.picam2.start()
+
+	#Stop and close camera
+	def close(self):
+		self.picam2.stop()
+		self.picam2.close()
+
+	#Display camera view
+	def start_preview(self, preview_type=Preview.DRM):
+		self.picam2.start_preview(preview_type)
+		self.preview_started = True
+		self.picam2.start()
+
+	#Stop camera preview
+	def stop_preview(self):
+		if self.preview_started:
+			self.picam2.stop_preview()
+
+	#Return the camera parameters for calibrating
+	def supported_controls(self):
+		print(self.picam2.camera_controls)
+
+	#Set the camera exposure time and gain values
+	def set_brightness(self, exposure, gain):
+		self.picam2.set_controls({"ExposureTime": exposure, "AnalogueGain": gain})
+
+	#Get the camera metadata
+	def get_metadata(self):
+		return self.picam2.capture_metadata()
+
+	def exposure_product(self):
+		min_exposure, max_exposure = 37, 667234896
+		min_gain, max_gain = 1.0, 22.0
+
+	def capture(self):
+		return self.picam2.capture_array()[:,:,:3]
+
+	def exposure_product(self, product=0, plate_solving=True, peak_brightness, exposure, gain):
+		if plate_solving:
+			min_exposure, max_exposure = 1000, 1000000
+			min_gain, max_gain = 1.0, 16.0
+			targeted_brightness = 253
+
+			if product != 0:
+				log(pro
+
+
+	def ae_plate_solving_mode(self):
+		self.picam2.set_controls({"AeEnable": False})
+		#This set controls is just for testing the mode
+		self.set_brightness(1000, 1.0)
+		for _ in range(5):
+			self.capture()
+
+		min_exposure, max_exposure = 1000, 1000000
+		min_gain, max_gain = 1.0, 16.0
+
+		frame = self.capture()
+		metadata = self.get_metadata()
+		exposure_us = metadata["ExposureTime"]
+		gain = metadata["AnalogueGain"]
+
+		peak_brightness = np.percentile(frame, 99)
+		print(f"Exposure Time: {exposure_us}, Gain: {gain}, Peak Brightness: {peak_brightness}")
+
+		while True:
+			if int(peak_brightness) != 253:
+				scale = 253 / peak_brightness
+				if gain != max_gain:
+					gain *= scale
+					if gain > max_gain:
+						gain = max_gain
+				else:
+					exposure_us *= scale
+					if exposure_us > max_exposure:
+						exposure_us = max_exposure
+				print(f"Exposure Time: {exposure_us}, Gain: {gain}, Peak Brightness: {peak_brightness}")
+
+			self.set_brightness(int(exposure_us), gain)
+			for _ in range(5):
+				self.capture()
+			frame = self.capture()
+			peak_brightness = np.percentile(frame, 99)
