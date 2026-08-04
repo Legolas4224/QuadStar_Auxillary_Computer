@@ -24,7 +24,7 @@ if __name__ == "__main__":
 			print("exposure_length = int(sys.argv[1]) gain = int(sys.argv[2]) num_frames = int(sys.argv[3])")
 		else :
 			exposure_length = int(sys.argv[1])
-			gain = int(sys.argv[2])
+			gain = float(sys.argv[2])
 			num_frames = int(sys.argv[3])
 			main_manual(exposure_length,gain,num_frames)
 	else :
