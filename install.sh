@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+sudo apt install git
+
 set -euo pipefail
 
 # Detect architecture and map to ASTAP's naming convention
@@ -30,7 +33,7 @@ curl -L -o "$OUTPUT" "$URL"
 
 echo "Saved as: $OUTPUT"
 echo "Unzipping"
-sudo dnf install -y unzip
+sudo apt install -y unzip
 unzip astap_cli.zip
 rm -rf astap_cli.zip
 chmod +x astap_cli
