@@ -58,25 +58,28 @@ class CameraLogic:
 		self.picam2.configure(self.still_config)
 		self.start()
 		self.picam2.set_controls({"AeEnable": False})
-		gain = 2.0
-		exposure_values = [0.05, 0.1, 0.5, 1, 2, 4, 8, 10, 15]
-		exposure_values = [ex * 10**6 for ex in exposure_values]
+		gain_values = [1.0, 2.0, 4.0, 8.0, 16.0, 22.0]
+		exposure_values = [0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100, 500, 1000]	#ms
+		exposure_values = [ex * 10**3 for ex in exposure_values]
 
 		for exposure in exposure_values:
-			self.set_brightness(int(exposure), gain)
-			#Loop until camera updates new settings
-			timeout = time.time() + 2.0
-			metadata = self.get_metadata()
-			while time.time() < timeout:
+			for gain in gain_values:
+				self.set_brightness(int(exposure), gain)
+
+				#Loop until camera updates new settings
+				timeout = time.time() + 2.0
 				metadata = self.get_metadata()
-				if (abs(metadata["ExposureTime"] - exposure) < 100):
-					break
-			#Save raw image to file
-			for _ in range(5):
-				request = self.picam2.capture_request()
-				request.save_dng(f"./data/{time.time()}_Ex:{metadata['ExposureTime']}_Gain:{metadata['AnalogueGain']}_Temp:{metadata['SensorTemperature']}.dng")
-				request.release()
-				print(f"Took picture at: {time.time()} Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']}")
+				while time.time() < timeout:
+					metadata = self.get_metadata()
+					if (abs(metadata["ExposureTime"] - exposure) < 100) and (abs(metadata["AnalogueGain"] - gain) < 0.1):
+						break
+
+				#Save raw image to file
+				for _ in range(3):
+					request = self.picam2.capture_request()
+					request.save_dng(f"./data/Ex:{metadata['ExposureTime']}_Gain:{metadata['AnalogueGain']}_Temp:{metadata['SensorTemperature']}_{time.time()}.dng")
+					request.release()
+					print(f"Took picture at: {Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}")
 
 
 
