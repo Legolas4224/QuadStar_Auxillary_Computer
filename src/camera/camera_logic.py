@@ -1,6 +1,8 @@
 from picamera2 import Picamera2, Preview
 import numpy as np
 import time
+import os
+import datetime
 
 class CameraLogic:
 	#Initialise camera
@@ -62,9 +64,13 @@ class CameraLogic:
 			#exposure_values = [250,500,1000]   # [0.11, 0.5, 1, 5, 10, 50, 100, 500, 1000]	#ms
 			#exposure_values = [ex * 10**3 for ex in exposure_values]
 			exposure_value = exposure_seconds * 10**6
-	
+
+
 			
 			self.set_brightness(int(exposure_value), gain_value)
+
+			capture_dir = f"/mnt/images/QuadStar/{datetime.now():%Y%m%d_%H%M%S}_e-{exposure_seconds}_g-{gain}_n-{num_exposures}"
+			os.makedirs(capture_dir, exist_ok=True)
 
 			#Loop until camera updates new settings
 			timeout = time.time() + 2.0
@@ -77,7 +83,7 @@ class CameraLogic:
 			#Save raw image to file
 			for _ in range(num_exposures):
 				request = self.picam2.capture_request()
-				request.save_dng(f"/mnt/images/Ex{metadata['ExposureTime']}_({exposure_seconds}s)_Gain{metadata['AnalogueGain']}_Temp{metadata['SensorTemperature']}_{time.time()}.dng")
+				request.save_dng(f"/mnt/images/QuadStar/Ex{metadata['ExposureTime']}_({exposure_seconds}s)_Gain{metadata['AnalogueGain']}_Temp{metadata['SensorTemperature']}_{time.time()}.dng")
 				request.release()
 				print(f"Took picture at: Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}")
 
