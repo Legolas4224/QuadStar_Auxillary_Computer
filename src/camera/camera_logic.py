@@ -12,7 +12,7 @@ class CameraLogic:
 		self.still_config = self.picam2.create_still_configuration(
 			raw={"format": "SRGGB12", "size": (4056, 3040)},
 			sensor={"output_size": (4056, 3040), "bit_depth": 12},
-			controls={"FrameDurationLimits": (110, 1000000)},
+			controls={"FrameDurationLimits": (110,900000)},
 		)
 		self.picam2.configure(self.preview_config)
 		self.preview_started = False
@@ -55,12 +55,13 @@ class CameraLogic:
 		return self.picam2.capture_array()[:,:,:3]
 
 
+		
 	def collect_calibration_data(self):
 		self.picam2.configure(self.still_config)
 		self.start()
 		self.picam2.set_controls({"AeEnable": False})
-		gain_values = [1.0, 2.0, 4.0, 6.0, 8.0]
-		exposure_values = [0.11, 0.5, 1, 5, 10, 50, 100, 500, 1000]	#ms
+		gain_values = [1.0]  # [1.0, 2.0, 4.0]
+		exposure_values = [500,1000,10000,90000]   # [0.11, 0.5, 1, 5, 10, 50, 100, 500, 1000]	#ms
 		exposure_values = [ex * 10**3 for ex in exposure_values]
 
 		for exposure in exposure_values:
@@ -76,7 +77,7 @@ class CameraLogic:
 						break
 
 				#Save raw image to file
-				for _ in range(3):
+				for _ in range(2):
 					request = self.picam2.capture_request()
 					request.save_dng(f"./data/Ex:{metadata['ExposureTime']}_Gain:{metadata['AnalogueGain']}_Temp:{metadata['SensorTemperature']}_{time.time()}.dng")
 					request.release()
