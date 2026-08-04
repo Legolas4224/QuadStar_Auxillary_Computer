@@ -14,6 +14,8 @@ def main_manual(exposure_length, gain, num_frames):
 	cam = CameraLogic(manual=True)
 	print(f"{cam.supported_controls()}\n\n")
 	#cam.collect_calibration_data()
+	print("\n ================ Image Capture Running ==================")
+	print(f"Exposure Time: {exposure_length}\nGain: {gain} \nFrames: {num_frames}")
 	cam.run_exposures(exposure_length,gain,num_frames)
 	cam.close()
 
