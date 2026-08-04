@@ -14,7 +14,7 @@ class CameraLogic:
 		self.still_config = self.picam2.create_still_configuration(
 			raw={"format": "SRGGB12", "size": (4056, 3040)},
 			sensor={"output_size": (4056, 3040), "bit_depth": 12},
-			controls={"FrameDurationLimits": (110,900000)},
+			controls={"FrameDurationLimits": (110,600000000)},
 		)
 		self.picam2.configure(self.preview_config)
 		self.preview_started = False
@@ -64,8 +64,6 @@ class CameraLogic:
 			#exposure_values = [250,500,1000]   # [0.11, 0.5, 1, 5, 10, 50, 100, 500, 1000]	#ms
 			#exposure_values = [ex * 10**3 for ex in exposure_values]
 			exposure_value = exposure_seconds * 10**6
-
-
 			
 			self.set_brightness(int(exposure_value), gain_value)
 
