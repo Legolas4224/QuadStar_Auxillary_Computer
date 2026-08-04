@@ -58,7 +58,7 @@ class CameraLogic:
 		self.picam2.configure(self.still_config)
 		self.start()
 		self.picam2.set_controls({"AeEnable": False})
-		gain_values = [1.0, 2.0, 4.0, 8.0, 16.0, 22.0]
+		gain_values = [1.0, 2.0, 4.0, 6.0, 8.0]
 		exposure_values = [0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100, 500, 1000]	#ms
 		exposure_values = [ex * 10**3 for ex in exposure_values]
 
