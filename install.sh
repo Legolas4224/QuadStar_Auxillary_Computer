@@ -40,7 +40,10 @@ chmod +x astap_cli
 mv astap_cli src/platesolving/astap_cli
 echo "ASTAP Installed at src/platesolving/astap_cli"
 
+echo "Installing dependencies"
+sudo apt install -y build-essential libcap-dev python3-dev python3-libcamera python3-kms++
+
 echo "Setting up python venv"
-python -m venv .venv
+python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
 pip install -r requirements.txt --prefer-binary
