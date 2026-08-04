@@ -61,7 +61,7 @@ class CameraLogic:
 			gain_value = gain  # [1.0, 2.0, 4.0]
 			#exposure_values = [250,500,1000]   # [0.11, 0.5, 1, 5, 10, 50, 100, 500, 1000]	#ms
 			#exposure_values = [ex * 10**3 for ex in exposure_values]
-			exposure_value = exposure_seconds * 10**3
+			exposure_value = exposure_seconds * 10**6
 	
 			
 			self.set_brightness(int(exposure_value), gain_value)
