@@ -1,15 +1,18 @@
 from picamera2 import Picamera2, Preview
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib
-matplotlib.use("Agg")
+import time
 
 class CameraLogic:
 	#Initialise camera
 	def __init__(self, manual=False, config=None):
 		self.picam2 = Picamera2()
+		#This configuration is for previewing the camera
 		self.preview_config = self.picam2.create_preview_configuration()
-		self.still_config = self.picam2.create_still_configuration()
+		#This configuration is for taking images
+		self.still_config = self.picam2.create_still_configuration(
+			raw={"format": "SRGGB12", "size": (4056, 3040)},
+			sensor={"output_size": (4056, 3040), "bit_depth": 12},
+		)
 		self.picam2.configure(self.preview_config)
 		self.preview_started = False
 
@@ -47,8 +50,38 @@ class CameraLogic:
 
 	#Capture the current image
 	#Return an array with RGB channels
-	def capture(self):
+	def capture_rgb(self):
 		return self.picam2.capture_array()[:,:,:3]
+
+
+	def collect_calibration_data(self):
+		self.picam2.configure(self.still_config)
+		self.start()
+		self.picam2.set_controls({"AeEnable": False})
+		gain_values = [1.0, 2.0, 4.0, 6.0, 8.0]
+		exposure_values = [0.01, 0.05, 0.1, 0.5, 1, 5, 10, 50, 100, 500, 1000]	#ms
+		exposure_values = [ex * 10**3 for ex in exposure_values]
+
+		for exposure in exposure_values:
+			for gain in gain_values:
+				self.set_brightness(int(exposure), gain)
+
+				#Loop until camera updates new settings
+				timeout = time.time() + 2.0
+				metadata = self.get_metadata()
+				while time.time() < timeout:
+					metadata = self.get_metadata()
+					if (abs(metadata["ExposureTime"] - exposure) < 100) and (abs(metadata["AnalogueGain"] - gain) < 0.1):
+						break
+
+				#Save raw image to file
+				for _ in range(3):
+					request = self.picam2.capture_request()
+					request.save_dng(f"./data/Ex:{metadata['ExposureTime']}_Gain:{metadata['AnalogueGain']}_Temp:{metadata['SensorTemperature']}_{time.time()}.dng")
+					request.release()
+					print(f"Took picture at: Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}")
+
+
 
 	#Simple function to find the exposure time and gain to reach the target brightness
 	#Notes: This works but it converges to the target brightness very slowly, especially if it is overexposed.
@@ -92,9 +125,11 @@ class CameraLogic:
 
 		target_brightness = 253
 
+		print(self.get_metadat())
+
 		while True:
 			frame = self.capture()
 			current_brightness = np.percentile(frame, 99)
 			if current_brightness != target_brightness:
-				self.exposure_product(current_brightness, target_brightness, plate_solving=True)
+				self.auto_exposure(current_brightness, target_brightness, plate_solving=True)
 

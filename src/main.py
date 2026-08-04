@@ -4,11 +4,8 @@ import time
 
 def main():
 	cam = CameraLogic(manual=True)
-	cam.start_preview()
-	time.sleep(1)
-	cam.ae_plate_solving_mode()
-	input()
-	cam.stop_preview()
+	print(f"{cam.supported_controls()}\n\n")
+	cam.collect_calibration_data()
 	cam.close()
 
 
