@@ -35,7 +35,9 @@ unzip astap_cli.zip
 rm -rf astap_cli.zip
 chmod +x astap_cli
 mv astap_cli src/platesolving/astap_cli
+echo "ASTAP Installed at src/platesolving/astap_cli"
 
+echo "Setting up python venv"
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt --prefer-binary
