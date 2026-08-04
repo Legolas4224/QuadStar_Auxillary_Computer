@@ -2,7 +2,7 @@ from picamera2 import Picamera2, Preview
 import numpy as np
 import time
 import os
-import datetime
+from datetime import datetime
 
 class CameraLogic:
 	#Initialise camera
