@@ -7,6 +7,34 @@ sudo apt install git vim
 mkdir -p /home/pi/images
 mkdir -p /home/pi/images/QuadStar
 
+# Startup script setup
+echo "#!/bin/bash
+
+# /etc/init.d/quadstar-startup.sh
+### BEGIN INIT INFO
+# Provides:          quadstar-startup
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start daemon at boot time
+# Description:       Enable service provided by daemon.
+### END INIT INFO
+
+sudo bash /home/pi/startup.sh > /home/pi/startup_logs/startup_$(date +%s).log 2>&1" > /etc/init.d/quadstar-startup.sh
+chmod +x /etc/init.d/quadstar-startup.sh
+update-rc.d quadstar-startup.sh default
+
+echo "#!/bin/bash
+cd /home/pi/QuadStar_Auxillary_Computer
+source .venv/bin/activate
+python3 src/main.py 0.3 1.0 3
+chown -R pi:pi /home/pi/images/
+./sync.sh
+"> /home/pi/startup.sh
+chmod +x /home/pi/startup.sh
+mkdir -p /home/pi/startup_logs
+
 set -euo pipefail
 
 # Detect architecture and map to ASTAP's naming convention
