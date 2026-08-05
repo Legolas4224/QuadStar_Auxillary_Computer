@@ -3,6 +3,7 @@ import numpy as np
 import time
 import os
 from datetime import datetime
+from tifffile import imwrite
 
 class CameraLogic:
 	#Initialise camera
@@ -67,7 +68,7 @@ class CameraLogic:
 			
 			self.set_brightness(int(exposure_value), gain_value)
 
-			capture_dir = f"/mnt/images/QuadStar/{datetime.now():%Y%m%d_%H%M%S}_e-{exposure_seconds}_g-{gain}_n-{num_exposures}"
+			capture_dir = f"/home/pi/images/QuadStar/{datetime.now():%Y%m%d_%H%M%S}_e-{exposure_seconds}_g-{gain}_n-{num_exposures}"
 			os.makedirs(capture_dir, exist_ok=True)
 
 			#Loop until camera updates new settings
@@ -81,7 +82,10 @@ class CameraLogic:
 			#Save raw image to file
 			for _ in range(num_exposures):
 				request = self.picam2.capture_request()
-				request.save_dng(f"{capture_dir}/Ex{metadata['ExposureTime']}_({exposure_seconds}s)_Gain{metadata['AnalogueGain']}_Temp{metadata['SensorTemperature']}_{time.time()}.dng")
+				img_filepath = f"{capture_dir}/Ex{metadata['ExposureTime']}_({exposure_seconds}s)_Gain{metadata['AnalogueGain']}_Temp{metadata['SensorTemperature']}_{time.time()}.tiff"
+				# request.save_dng(img_filepath)
+				img_array = request.make_buffer(name="raw")
+				imwrite(img_filepath, img_array)
 				request.release()
 				print(f"Took picture at: Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}")
 
