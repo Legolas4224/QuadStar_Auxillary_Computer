@@ -82,10 +82,11 @@ class CameraLogic:
 			#Save raw image to file
 			for _ in range(num_exposures):
 				request = self.picam2.capture_request()
-				img_filepath = f"{capture_dir}/Ex{metadata['ExposureTime']}_({exposure_seconds}s)_Gain{metadata['AnalogueGain']}_Temp{metadata['SensorTemperature']}_{time.time()}.tiff"
-				# request.save_dng(img_filepath)
-				img_array = request.make_buffer(name="raw")
+				img_filepath = f"{capture_dir}/Ex{metadata['ExposureTime']}_({exposure_seconds}s)_Gain{metadata['AnalogueGain']}_Temp{metadata['SensorTemperature']}_{time.time()}.dng"
+				# request.save_dng(name="raw", file_output=img_filepath)
+				img_array = request.make_array(name="raw").view(np.uint16)
 				imwrite(img_filepath, img_array)
+				print(f"array info. flags({img_array.flags}), shape({img_array.shape}), size({img_array.size}), itemsize({img_array.itemsize}), nbytes({img_array.nbytes})")
 				request.release()
 				print(f"Took picture at: Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}")
 

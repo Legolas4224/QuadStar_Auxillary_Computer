@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 
-sudo apt install git
+sudo apt update
+sudo apt upgrade
+sudo apt install git vim 
+
+mkdir -p /home/pi/images
+mkdir -p /home/pi/images/QuadStar
 
 set -euo pipefail
 
@@ -48,4 +53,3 @@ python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
 pip install -r requirements.txt --prefer-binary
 
-mkdir -p data
