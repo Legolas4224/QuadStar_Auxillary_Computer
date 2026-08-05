@@ -1,6 +1,8 @@
 from picamera2 import Picamera2, Preview
 import numpy as np
 import time
+import os
+from datetime import datetime
 
 class CameraLogic:
 	#Initialise camera
@@ -12,7 +14,7 @@ class CameraLogic:
 		self.still_config = self.picam2.create_still_configuration(
 			raw={"format": "SRGGB12", "size": (4056, 3040)},
 			sensor={"output_size": (4056, 3040), "bit_depth": 12},
-			controls={"FrameDurationLimits": (110, 1000000)},
+			controls={"FrameDurationLimits": (110,600000000)},
 		)
 		self.picam2.configure(self.preview_config)
 		self.preview_started = False
@@ -54,13 +56,42 @@ class CameraLogic:
 	def capture_rgb(self):
 		return self.picam2.capture_array()[:,:,:3]
 
+	def run_exposures(self, exposure_seconds, gain, num_exposures):
+			self.picam2.configure(self.still_config)
+			self.start()
+			self.picam2.set_controls({"AeEnable": False})
+			gain_value = gain  # [1.0, 2.0, 4.0]
+			#exposure_values = [250,500,1000]   # [0.11, 0.5, 1, 5, 10, 50, 100, 500, 1000]	#ms
+			#exposure_values = [ex * 10**3 for ex in exposure_values]
+			exposure_value = exposure_seconds * 10**6
+			
+			self.set_brightness(int(exposure_value), gain_value)
 
+			capture_dir = f"/mnt/images/QuadStar/{datetime.now():%Y%m%d_%H%M%S}_e-{exposure_seconds}_g-{gain}_n-{num_exposures}"
+			os.makedirs(capture_dir, exist_ok=True)
+
+			#Loop until camera updates new settings
+			timeout = time.time() + 2.0
+			metadata = self.get_metadata()
+			while time.time() < timeout:
+				metadata = self.get_metadata()
+				if (abs(metadata["ExposureTime"] - exposure_value) < 100) and (abs(metadata["AnalogueGain"] - gain_value) < 0.1):
+					break
+
+			#Save raw image to file
+			for _ in range(num_exposures):
+				request = self.picam2.capture_request()
+				request.save_dng(f"{capture_dir}/Ex{metadata['ExposureTime']}_({exposure_seconds}s)_Gain{metadata['AnalogueGain']}_Temp{metadata['SensorTemperature']}_{time.time()}.dng")
+				request.release()
+				print(f"Took picture at: Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}")
+
+		
 	def collect_calibration_data(self):
 		self.picam2.configure(self.still_config)
 		self.start()
 		self.picam2.set_controls({"AeEnable": False})
-		gain_values = [1.0, 2.0, 4.0, 6.0, 8.0]
-		exposure_values = [0.11, 0.5, 1, 5, 10, 50, 100, 500, 1000]	#ms
+		gain_values = [1.0]  # [1.0, 2.0, 4.0]
+		exposure_values = [250,500,1000]   # [0.11, 0.5, 1, 5, 10, 50, 100, 500, 1000]	#ms
 		exposure_values = [ex * 10**3 for ex in exposure_values]
 
 		for exposure in exposure_values:
@@ -76,11 +107,11 @@ class CameraLogic:
 						break
 
 				#Save raw image to file
-				for _ in range(3):
+				for _ in range(2):
 					request = self.picam2.capture_request()
 					request.save_dng(f"./data/Ex:{metadata['ExposureTime']}_Gain:{metadata['AnalogueGain']}_Temp:{metadata['SensorTemperature']}_{time.time()}.dng")
 					request.release()
-					print(f"Took picture at: {Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}")
+					print(f"Took picture at: Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}")
 
 
 	#Simple function to find the exposure time and gain to reach the target brightness
