@@ -6,8 +6,9 @@ import sys
 def main():
 	cam = CameraLogic(manual=True)
 	print(f"{cam.supported_controls()}\n\n")
-	#cam.collect_calibration_data()
-	cam.run_exposures(0.5,1.0,20)
+	exposure_values = [0.11, 0.25, 0.5, 1]		#s
+	gain_values = [1.0]
+	cam.collect_calibration_data(exposure_values, gain_values)
 	cam.close()
 
 def main_manual(exposure_length, gain, num_frames):
