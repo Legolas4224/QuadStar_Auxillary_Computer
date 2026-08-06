@@ -39,7 +39,7 @@ cd "$TARGET_DIR"
 
 shopt -s nullglob
 
-FOLDERS=(*/)
+FOLDERS=(*.done/)
 
 if [[ ${#FOLDERS[@]} -eq 0 ]]; then
     echo "No subfolders found in '$TARGET_DIR'. Nothing to do."

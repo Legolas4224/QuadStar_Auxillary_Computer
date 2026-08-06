@@ -167,9 +167,9 @@ def main(raw_image_path, filetype, fits_dir=None):
 
     # fix
     if fits_dir is None:
-        fits_dir = f"{raw_image_path}/{now}-fits/"
+        fits_dir = f"{raw_image_path}-{now}-fits/"
     else:
-        fits_dir = fits_dir + f"/{now}-fits/"
+        fits_dir = fits_dir + f"-{now}-fits/"
 
     os.mkdir(fits_dir)
     converted_files = []
@@ -263,7 +263,7 @@ def main(raw_image_path, filetype, fits_dir=None):
     #     print("Stacked images directory does not exist. Creating!")
     # except:
     #     print("Found stacked image directory")
-    output_path = f"{STACKED_DIR}{obstime}.fits"
+    output_path = f"{STACKED_DIR}/{obstime}.fits.stacked"
     fits.writeto(output_path, result, overwrite=True)
     print(f"Integration Complete: Image saved as {output_path}")
 
@@ -300,9 +300,9 @@ def main(raw_image_path, filetype, fits_dir=None):
         print(f"Failed: {e}")
     except subprocess.TimeoutExpired:
         print("Timeout")
-    log_path = output_path.removesuffix(".fits")
+    log_path = output_path.removesuffix(".stacked")
     ra_str, dec_str = get_ra_dec(log_path + ".log")
-
+ 
     try:
         if ra_str is None or dec_str is None:
             print("No plate solution found. Try integrating more frames?")

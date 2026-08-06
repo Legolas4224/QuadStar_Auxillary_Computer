@@ -75,7 +75,7 @@ class CameraLogic:
 
         self.set_brightness(int(exposure_value), gain_value)
 
-        capture_dir = f"/home/pi/images/QuadStar/{datetime.now():%Y%m%d_%H%M%S}_e-{exposure_seconds}_g-{gain}_n-{num_exposures}"
+        capture_dir = f"/home/pi/images/QuadStar/{datetime.now():%Y%m%d_%H%M%S}_e-{exposure_seconds}_g-{gain}_n-{num_exposures}.solve"
         os.makedirs(capture_dir, exist_ok=True)
 
         # Loop until camera updates new settings
