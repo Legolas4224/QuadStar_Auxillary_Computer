@@ -23,7 +23,7 @@ def convert_dng_to_fits(dng_path, fits_path):
     # 4. Write out the FITS file
     try:
         hdu.writeto(fits_path, overwrite=True)
-        #print(f"Successfully converted {dng_path} -> {fits_path}")
+        print(f"File converted from .dng to .fits at: {fits_path}")
         return fits_path
     except Exception as e:
         print("Error writing fits file")
@@ -32,12 +32,13 @@ def convert_dng_to_fits(dng_path, fits_path):
 
 
 # Example usage:
-#convert_dng_to_fits("test_images/SkyTest3/0.5s/Ex:499991_Gain:1.0_Temp:5.0_1785837712.590334.dng", "output.fits")
+# convert_dng_to_fits("test_images/SkyTest3/0.5s/Ex:499991_Gain:1.0_Temp:5.0_1785837712.590334.dng", "output.fits")
 
 
 import tifffile
 from astropy.io import fits
 import numpy as np
+
 
 def tiff_to_fits(tiff_file, fits_file):
     image = tifffile.imread(tiff_file)
@@ -45,13 +46,6 @@ def tiff_to_fits(tiff_file, fits_file):
     # Ensure a sensible FITS datatype
     image = image.astype(np.float32)
 
-    fits.writeto(
-        fits_file,
-        image,
-        overwrite=True
-    )
-    print("File converted to fits")
+    fits.writeto(fits_file, image, overwrite=True)
+    print(f"File converted from .tiff to .fits at: {fits_file}")
     return fits_file
-
-
-    
