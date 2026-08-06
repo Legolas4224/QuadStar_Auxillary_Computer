@@ -3,6 +3,7 @@ import numpy as np
 import time
 import os
 from datetime import datetime
+from tifffile import imwrite
 
 class CameraLogic:
 	#Initialise camera
@@ -63,7 +64,7 @@ class CameraLogic:
 			self.picam2.configure(self.still_config)
 			self.start()
 
-		capture_dir = f"/mnt/images/QuadStar/{datetime.now():%Y%m%d_%H%M%S}_e-{exposure_seconds}_g-{gain}_n-{num_exposures}"
+		capture_dir = f"/home/pi/images/QuadStar/{datetime.now():%Y%m%d_%H%M%S}_e-{exposure_seconds}_g-{gain}_n-{num_exposures}"
 		os.makedirs(capture_dir, exist_ok=True)
 
 		exposure_value = exposure_seconds * 10**6
@@ -77,6 +78,16 @@ class CameraLogic:
 			if (abs(metadata["ExposureTime"] - exposure_value) < 100) and (abs(metadata["AnalogueGain"] - gain_value) < 0.1):
 				break
 
+			#Save raw image to file
+			for _ in range(num_exposures):
+				request = self.picam2.capture_request()
+				img_filepath = f"{capture_dir}/Ex{metadata['ExposureTime']}_({exposure_seconds}s)_Gain{metadata['AnalogueGain']}_Temp{metadata['SensorTemperature']}_{time.time()}.dng"
+				# request.save_dng(name="raw", file_output=img_filepath)
+				img_array = request.make_array(name="raw").view(np.uint16)
+				imwrite(img_filepath, img_array)
+				print(f"array info. flags({img_array.flags}), shape({img_array.shape}), size({img_array.size}), itemsize({img_array.itemsize}), nbytes({img_array.nbytes})")
+				request.release()
+				print(f"Took picture at: Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}")
 		#Save raw image to file
 		for _ in range(num_exposures):
 			request = self.picam2.capture_request()
