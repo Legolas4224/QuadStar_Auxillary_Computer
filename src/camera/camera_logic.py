@@ -4,6 +4,9 @@ import time
 import os
 from datetime import datetime
 from tifffile import imwrite
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
 
 class CameraLogic:
 	#Initialise camera
@@ -17,7 +20,15 @@ class CameraLogic:
 			sensor={"output_size": (4056, 3040), "bit_depth": 12},
 			controls={"FrameDurationLimits": (110,600000000), "AeEnable": False},
 		)
-		self.picam2.configure(self.preview_config)
+		self.noIR_config = self.picam2.create_still_configuration(
+			raw={"format": 'SRGGB10', "size": (4608, 2592)},
+			sensor={"output_size": (4608, 2592), "bit_depth": 10},
+			controls={"FrameDurationLimits": (110, 600000000), "AeEnable": False}
+		)
+		if Picamera2.global_camera_info()[0]["Model"] == 'imx708_wide_noir':
+			self.picam2.configure(self.noIR_config)
+		else:
+			self.picam2.configure(self.preview_config)
 		self.preview_started = False
 
 	#Start camera
@@ -57,12 +68,18 @@ class CameraLogic:
 	def capture_rgb(self):
 		return self.picam2.capture_array()[:,:,:3]
 
+	def get_sensor_formats(self):
+		for mode in self.picam2.sensor_modes:
+			print(mode)
+
 	#Capture {num_exposure} images at {exposure_seconds} and {gain}
 	#Save as .dng file
 	def run_exposures(self, exposure_seconds, gain, num_exposures):
-		if picam2.closed:
+		try:
 			self.picam2.configure(self.still_config)
 			self.start()
+		except:
+			None
 
 		capture_dir = f"/home/pi/images/QuadStar/{datetime.now():%Y%m%d_%H%M%S}_e-{exposure_seconds}_g-{gain}_n-{num_exposures}"
 		os.makedirs(capture_dir, exist_ok=True)
@@ -75,80 +92,43 @@ class CameraLogic:
 		metadata = self.get_metadata()
 		while time.time() < timeout:
 			metadata = self.get_metadata()
-			if (abs(metadata["ExposureTime"] - exposure_value) < 100) and (abs(metadata["AnalogueGain"] - gain_value) < 0.1):
+			if (abs(metadata["ExposureTime"] - exposure_value) < 100) and (abs(metadata["AnalogueGain"] - gain) < 0.1):
 				break
 
-			#Save raw image to file
-			for _ in range(num_exposures):
-				request = self.picam2.capture_request()
-				img_filepath = f"{capture_dir}/Ex{metadata['ExposureTime']}_({exposure_seconds}s)_Gain{metadata['AnalogueGain']}_Temp{metadata['SensorTemperature']}_{time.time()}.dng"
-				# request.save_dng(name="raw", file_output=img_filepath)
-				img_array = request.make_array(name="raw").view(np.uint16)
-				imwrite(img_filepath, img_array)
-				print(f"array info. flags({img_array.flags}), shape({img_array.shape}), size({img_array.size}), itemsize({img_array.itemsize}), nbytes({img_array.nbytes})")
-				request.release()
-				print(f"Took picture at: Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}")
 		#Save raw image to file
-		for _ in range(num_exposures):
+		for n in range(num_exposures):
 			request = self.picam2.capture_request()
-			request.save("raw", f"{capture_dir}/Ex{metadata['ExposureTime']}_({exposure_seconds}s)_Gain{metadata['AnalogueGain']}_Temp{metadata['SensorTemperature']}_{time.time()}.tiff")
+			img_filepath = f"{capture_dir}/e-{metadata['ExposureTime']}({exposure_seconds}s)_g{metadata['AnalogueGain']}_Temp{metadata['SensorTemperature']}_{n}.tiff"
+			img_array = request.make_array(name="raw").view(np.uint16)
+			imwrite(img_filepath, img_array)
+			print(f"array info. flags({img_array.flags}), shape({img_array.shape}), size({img_array.size}), itemsize({img_array.itemsize}), nbytes({img_array.nbytes})")
 			request.release()
 			print(f"Took picture at: Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}")
-
+	
 	#Function to take images at a range exposure and gain values
-	def collect_calibration_data(self, exposure_values, gain_values):
+	def collect_calibration_data(self, exposure_values, gain_values, num_exposures):
 		for exposure in exposure_values:
 			for gain in gain_values:
-				self.run_exposures(exposure, gain, 1)
+				self.run_exposures(exposure, gain, num_exposures)
 
+	#Function to adjust exposure time and gain value for imaging
+	def adjust_exposure(self):
+		try:
+			self.start()
+		except:
+			None
+			
+		min_ex, max_ex = 0.11, 2		#s
+		min_gain, max_gain = 1.0, 8.0
+		
+		request = self.picam2.capture_request()
+		img_array = request.make_array(name="raw")
+		imwrite("../images/calibration.tiff", img_array)
 
-	#Simple function to find the exposure time and gain to reach the target brightness
-	#Notes: This works but it converges to the target brightness very slowly, especially if it is overexposed.
-	#Next steps: - Try a calibration function, sweep through a range of exposure and gain to quickly get the correct setting
-	#            - Or find a math function that converges faster
-	#			 - Try a different method of auto exposure
-	def auto_exposure(self, current, target, plate_solving):
-		min_exposure, max_exposure = 1000, 1000000
-		min_gain, max_gain = 1.0, 16.0
-
-		frame = self.capture()
-		metadata = self.get_metadata()
-		exposure, gain = metadata["ExposureTime"], metadata["AnalogueGain"]
-
-		if plate_solving:
-			while current != target:
-				scale = target / current
-				if gain < max_gain:
-					gain *= scale
-				elif exposure < max_exposure:
-					exposure *= scale
-				gain = max_gain if gain > max_gain else gain
-				exposure = max_exposure if exposure > max_exposure else exposure
-
-				self.set_brightness(int(exposure), gain)
-				for _ in range(5):
-					self.capture()
-
-				print(f"Exposure: {exposure}, Gain: {gain}, Brightness: {current}")
-
-				frame = self.capture()
-				current = np.percentile(frame, 99)
-
-	def ae_plate_solving_mode(self):
-		self.picam2.set_controls({"AeEnable": False})
-
-		#This set controls is just for testing the mode
-		self.set_brightness(1000, 1.0)
-		for _ in range(5):
-			self.capture()
-
-		target_brightness = 253
-
-		print(self.get_metadat())
-
-		while True:
-			frame = self.capture()
-			current_brightness = np.percentile(frame, 99)
-			if current_brightness != target_brightness:
-				self.auto_exposure(current_brightness, target_brightness, plate_solving=True)
-
+		plt.figure(figsize=(10, 6))
+		plt.hist(img_array.ravel(), color='gray', edgecolor='none')
+		plt.xlabel("Pixel value (10-bit, 0–1023)")
+		plt.ylabel("Count")
+		plt.title("Raw Bayer pixel value histogram")
+		plt.savefig("../images/histogram.png", dpi=150)
+		plt.close()
