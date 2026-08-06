@@ -4,7 +4,6 @@ from astropy.io import fits
 import glob
 from astropy.stats import sigma_clip
 import astroalign as aa
-from datetime import datetime
 import os
 from dng_to_fits import convert_dng_to_fits, tiff_to_fits
 from helpers import calc_image_scale
@@ -17,15 +16,17 @@ from datetime import datetime
 
 
 # ========== GLOBAL PARAMS ==================
-focal_length = 4.5  # mm
-pixel_size = 1.55  # microns
+FOCAL_LENGTH_MM = 4.5  # mm
+PIXEL_SIZE_MICRONS = 1.55  # microns
 
-raw_image_path = (
+# TODO: Replace this with actual path
+RAW_IMAGE_PATH: str = (
     "/home/thomas/Documents/Code/QuadStar/platesolving/test_images/SkyTest3/0.5s/"
 )
-raw_image_type = "tiff"
+RAW_IMAGE_TYPE: str = "tiff"
 
-ASTAP_PROG_NAME: str = "astap"  # _cli"
+ASTAP_PROG_NAME: str = "astap_cli"  # _cli"
+ASTAP_DB_DIR: str = "/home/pi/QuadStar_Auxillary_Computer/src/platesolving/dbs"
 
 # ===========================================
 
@@ -36,7 +37,7 @@ def add_RADEC_to_fits(file, coordinates_dict, average_obstime):
     RA = float(coordinates_dict["RA"].deg)
     DEC = float(coordinates_dict["DEC"].deg)
 
-    image_scale = calc_image_scale(pixel_size, focal_length)
+    image_scale = calc_image_scale(PIXEL_SIZE_MICRONS, FOCAL_LENGTH_MM)
 
     # 2. Add or update the RA and DEC keywords
     # Standard FITS format expects decimal degrees
@@ -138,10 +139,10 @@ def measure_stars(image_path):
 # ==========================================================================
 
 
-def main(raw_image_path, filetype):
+def main(raw_image_path: str, filetype: str):
 
     # ======== Load Images ==========
-    files = sorted(glob.glob(f"{raw_image_path}*.{filetype}"))
+    files: list[str] = sorted(glob.glob(f"{raw_image_path}*.{filetype}"))
     print(f"Found {len(files)} frames")
 
     if not files:
@@ -153,11 +154,11 @@ def main(raw_image_path, filetype):
     os.mkdir(fits_dir)
     converted_files = []
     i = 0
-    timestamps = []
+    timestamps: list[str] = []
     if filetype == "dng":
         for file in files:
             i += 1
-            newname = file.removesuffix(".dng")
+            newname: str = file.removesuffix(".dng")
             converted = convert_dng_to_fits(file, f"{fits_dir}/{newname}.fits")
             converted_files.append(converted)
             timestamps.append("_".split(newname)[-1])
@@ -230,13 +231,7 @@ def main(raw_image_path, filetype):
 
     try:
         result = subprocess.run(
-            [
-                ASTAP_PROG_NAME,
-                "-f",
-                output_path,
-                "-log",
-                "-d /home/thomas/Documents/Code/QuadStar/platesolving/ASTAP_DB",
-            ]
+            [ASTAP_PROG_NAME, "-f", output_path, "-log", f"-d {ASTAP_DB_DIR}"]
         )
 
     except subprocess.CalledProcessError as e:
@@ -246,8 +241,7 @@ def main(raw_image_path, filetype):
 
 
 if __name__ == "__main__":
-    main(raw_image_path, raw_image_type)
+    main(RAW_IMAGE_PATH, RAW_IMAGE_TYPE)
     # get_FWHM("2026-08-05 23:14:37.066381-fits/image1.fits")
     # measure_stars("2026-08-05 23:14:37.066381-fits/image1.fits")
     # measure_stars("stacked/2026-08-05 23:15:46.976449.fits")
-
