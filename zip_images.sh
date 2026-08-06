@@ -1,17 +1,17 @@
-#!
 #!/usr/bin/env bash
 #
-# zip_folders.sh
+# archive_folders.sh
 #
-# Zips every immediate subfolder of a target directory into <folder>.zip,
-# then deletes the original folder — but only after verifying the zip
+# Archives every immediate subfolder of a target directory into
+# <folder>.tar.zst using zstd's --ultra -22 (max compression), then
+# deletes the original folder — but only after verifying the archive
 # was created successfully and is not corrupt.
 #
 # Usage:
-#   ./zip_folders.sh /path/to/directory
-#   ./zip_folders.sh            # defaults to current directory
+#   ./archive_folders.sh /path/to/directory
+#   ./archive_folders.sh            # defaults to current directory
 #
-# Tested for Raspberry Pi OS Lite (Debian-based, bash + zip).
+# Tested for Raspberry Pi OS Lite (Debian-based, bash + tar + zstd).
 
 set -euo pipefail
 
@@ -24,9 +24,14 @@ if [[ ! -d "$TARGET_DIR" ]]; then
     exit 1
 fi
 
-if ! command -v zip >/dev/null 2>&1; then
-    echo "Error: 'zip' is not installed. Install it with:" >&2
-    echo "    sudo apt update && sudo apt install -y zip unzip" >&2
+if ! command -v zstd >/dev/null 2>&1; then
+    echo "Error: 'zstd' is not installed. Install it with:" >&2
+    echo "    sudo apt update && sudo apt install -y zstd" >&2
+    exit 1
+fi
+
+if ! command -v tar >/dev/null 2>&1; then
+    echo "Error: 'tar' is not installed (unusual — should be preinstalled)." >&2
     exit 1
 fi
 
@@ -42,7 +47,7 @@ if [[ ${#FOLDERS[@]} -eq 0 ]]; then
 fi
 
 echo "Target directory: $(pwd)"
-echo "Found ${#FOLDERS[@]} folder(s) to zip."
+echo "Found ${#FOLDERS[@]} folder(s) to archive."
 echo
 
 # --- Main loop -----------------------------------------------------------
@@ -50,30 +55,32 @@ echo
 for folder in "${FOLDERS[@]}"; do
     # Strip trailing slash
     name="${folder%/}"
-    zipfile="${name}.zip"
+    archive="${name}.tar.zst"
 
     # Skip if it's not actually a directory (safety, in case of symlinks etc.)
     [[ -d "$name" ]] || continue
 
-    echo "Zipping '$name' -> '$zipfile' ..."
+    echo "Archiving '$name' -> '$archive' ..."
 
-    if [[ -e "$zipfile" ]]; then
-        echo "  Warning: '$zipfile' already exists, overwriting."
-        rm -f "$zipfile"
+    if [[ -e "$archive" ]]; then
+        echo "  Warning: '$archive' already exists, overwriting."
+        rm -f "$archive"
     fi
 
-    # Create the zip quietly, preserving folder structure
-    if zip -r -q -9 "$zipfile" "$name"; then
-        # Verify the zip isn't corrupt before deleting the source
-        if unzip -tq "$zipfile" >/dev/null 2>&1; then
+    # Create the archive with zstd --ultra -22 (max compression).
+    # This is CPU-heavy and slow — expect it to take a while per folder,
+    # especially on a Pi 5 with lots of raw DNG data.
+    if tar -I 'zstd --ultra -22' -cf "$archive" "$name"; then
+        # Verify the archive isn't corrupt before deleting the source
+        if zstd -t "$archive" >/dev/null 2>&1; then
             rm -rf -- "$name"
             echo "  Done. Removed original folder."
         else
-            echo "  Error: zip verification failed for '$zipfile'. Original folder kept." >&2
-            rm -f "$zipfile"
+            echo "  Error: archive verification failed for '$archive'. Original folder kept." >&2
+            rm -f "$archive"
         fi
     else
-        echo "  Error: failed to zip '$name'. Original folder kept." >&2
+        echo "  Error: failed to archive '$name'. Original folder kept." >&2
     fi
 
     echo
