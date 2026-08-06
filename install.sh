@@ -95,7 +95,7 @@ DB_OUTPUT="$DB_NAME.zip"
 DB_DIR="/home/pi/QuadStar_Auxillary_Computer/src/platesolving/dbs"
 mkdir -p $DB_DIR
 
-if [ -f "$DB_DIR/$DB_NAME" ]; then
+if [ -d "$DB_DIR/" ]; then
 
 	echo "Database $DB_TYPE already installed at $DB_DIR"
 else
@@ -105,9 +105,8 @@ else
 	
 	echo "Saved as: $DB_OUTPUT"
 	echo "Unzipping"
-	unzip $DB_OUTPUT # "$DB_DIR/$DB_NAME"
-	mv "$(unzip -Z1 $DB_OUTPUT)" $DB_NAME
-	mv $DB_NAME "$DB_DIR/"
+	unzip $DB_OUTPUT
+	mv "$(unzip -Z1 $DB_OUTPUT)" "$DB_DIR/"
 	rm -rf $DB_OUTPUT
 	echo "Database $DB_TYPE installed at $DB_DIR"
 fi
