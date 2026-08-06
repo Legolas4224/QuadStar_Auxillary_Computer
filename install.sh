@@ -7,7 +7,7 @@ fi
 
 sudo apt update
 sudo apt upgrade
-sudo apt install git vim unzip 
+sudo apt install git vim zip unzip 
 
 mkdir -p /home/pi/images
 mkdir -p /home/pi/images/QuadStar
