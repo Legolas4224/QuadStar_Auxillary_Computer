@@ -324,11 +324,11 @@ def main(raw_image_path, filetype, fits_dir=None):
 # ==============================================================================
 
 if __name__ == "__main__":
-    if sys.argv[1]:
+    if len(sys.argv) > 1:
         if sys.argv[1] == "-f":
             raw_image_path = sys.argv[2]
 
-    if sys.argv[3]:
+    if len(sys.argv) > 3:
         if sys.argv[3] == "-o":
             main(raw_image_path, raw_image_type, sys.argv[4])
 
