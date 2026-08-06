@@ -29,9 +29,9 @@ sensor_height = 3040 #px
 ROI_Border = 0.2 # reject stars within this fraction of the edge of the frame
 
 raw_image_path = "/home/thomas/Documents/Code/QuadStar/platesolving/test_images/SkyTest3/0.5s_5/"
-raw_image_type = "dng"
+raw_image_type = "tiff" # dng
 
-ASTAP_PROG_NAME: str = "astap" #_cli"
+ASTAP_PROG_NAME: str = "astap_cli"
 
 # ===========================================
 
@@ -154,7 +154,10 @@ def main(raw_image_path, filetype) :
     # ======== Load Images ==========
     files = sorted(glob.glob(f"{raw_image_path}*.{filetype}"))
     print(f"Found {len(files)} frames")
-
+    print("Files found:")
+    for f in files:
+        print(f)
+    
     if not files:
         raise RuntimeError("No image files found.")
 
@@ -175,12 +178,15 @@ def main(raw_image_path, filetype) :
     elif filetype == "tiff" :
         for file in files :
             i += 1
-            newname = f"{file.removesuffix('.tiff')}".split("/")[-1]
+            # temp fix 
+            # newname = f"{file.removesuffix('.tiff')}".split("/")[-1]
+            newname = f"{file.removesuffix('.tiff')}".split("_")[-1]
             converted = tiff_to_fits(file, f"{fits_dir}/{newname}.fits")
             converted_files.append(converted)
             timestamps.append(f"{newname}".split(f"{newname}")[-1])
                  
     datetimes = []
+    print(f"time: {timestamps}")
     for time in timestamps :
         datetime_time = datetime.fromtimestamp(float(time), tz=timezone.utc)
         datetimes.append(datetime_time)
