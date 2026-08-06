@@ -33,7 +33,7 @@ raw_image_path = (
 )
 raw_image_type = "tiff"  # dng
 
-ASTAP_PROG_NAME: str = "astap_cli"
+ASTAP_PROG_NAME: str = "/home/pi/QuadStar_Auxillary_Computer/src/platesolving/astap_cli"
 
 # ===========================================
 
