@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 
+if [ -z "$SUDO_USER" ]; then
+	echo "Please run this script with sudo" >&2
+	exit 1
+fi
+
 sudo apt update
 sudo apt upgrade
-sudo apt install git vim 
+sudo apt install git vim unzip 
 
 mkdir -p /home/pi/images
 mkdir -p /home/pi/images/QuadStar
@@ -39,49 +44,72 @@ mkdir -p /home/pi/startup_logs
 
 cd /home/pi/QuadStar_Auxillary_Computer
 
-if [-f "./src/platesolving/astap_cli"]; then
-
-set -euo pipefail
-# Detect architecture and map to ASTAP's naming convention
-ARCH_RAW="$(uname -m)"
-
-case "$ARCH_RAW" in
-x86_64)
-  ARCH="amd64"
-  ;;
-aarch64 | arm64)
-  ARCH="aarch64"
-  ;;
-armv6l | armv7l | armhf)
-  ARCH="armhf"
-  ;;
-*)
-  echo "Unsupported architecture: $ARCH_RAW" >&2
-  exit 1
-  ;;
-esac
-
-echo "Detected architecture: $ARCH_RAW -> using '$ARCH'"
-
-URL="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_command-line_version_Linux_${ARCH}.zip/download"
-OUTPUT="astap_cli.zip"
-
-echo "Downloading from: $URL"
-curl -L -o "$OUTPUT" "$URL"
-
-echo "Saved as: $OUTPUT"
-echo "Unzipping"
-sudo apt install -y unzip
-unzip astap_cli.zip
-rm -rf astap_cli.zip
-chmod +x astap_cli
-mv astap_cli /home/pi/QuadStar_Auxillary_Computer/src/platesolving/astap_cli
-echo "ASTAP Installed at /home/pi/QuadStar_Auxillary_Computer/src/platesolving/astap_cli"
-
+if [-f "/home/pi/QuadStar_Auxillary_Computer/src/platesolving/astap_cli"]; then
+	
+	echo "ASTAP Already installed"
 else
+	set -euo pipefail
+	# Detect architecture and map to ASTAP's naming convention
+	ARCH_RAW="$(uname -m)"
+	
+	case "$ARCH_RAW" in
+	x86_64)
+	  ARCH="amd64"
+	  ;;
+	aarch64 | arm64)
+	  ARCH="aarch64"
+	  ;;
+	armv6l | armv7l | armhf)
+	  ARCH="armhf"
+	  ;;
+	*)
+	  echo "Unsupported architecture: $ARCH_RAW" >&2
+	  exit 1
+	  ;;
+	esac
+	
+	echo "Detected architecture: $ARCH_RAW -> using '$ARCH'"
+	
+	URL="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_command-line_version_Linux_${ARCH}.zip/download"
+	OUTPUT="astap_cli.zip"
+	
+	echo "Downloading from: $URL"
+	curl -L -o "$OUTPUT" "$URL"
+	
+	echo "Saved as: $OUTPUT"
+	echo "Unzipping"
+	sudo apt install -y unzip
+	unzip astap_cli.zip
+	rm -rf astap_cli.zip
+	chmod +x astap_cli
+	mv astap_cli /home/pi/QuadStar_Auxillary_Computer/src/platesolving/astap_cli
+	echo "ASTAP Installed at /home/pi/QuadStar_Auxillary_Computer/src/platesolving/astap_cli"
+	
+fi
 
-echo "ASTAP Already installed"
 
+DB_TYPE="w08"
+DB_NAME="db_$DB_TYPE"
+DB_URL="https://sourceforge.net/projects/astap-program/files/star_databases/w08_star_database_mag08_astap.zip/download"
+DB_OUTPUT="$DB_NAME.zip"
+DB_DIR="/home/pi/QuadStar_Auxillary_Computer/src/platesolving/dbs"
+mkdir -p $DB_DIR
+
+if [ -f "$DB_DIR/$DB_NAME" ]; then
+
+	echo "Database $DB_TYPE already installed at $DB_DIR"
+else
+	echo "Installing star database"	
+	echo "Downloading from: $DB_URL"
+	curl -L -o "$DB_OUTPUT" "$DB_URL"
+	
+	echo "Saved as: $DB_OUTPUT"
+	echo "Unzipping"
+	unzip $DB_OUTPUT # "$DB_DIR/$DB_NAME"
+	mv "$(unzip -Z1 $DB_OUTPUT)" $DB_NAME
+	mv $DB_NAME "$DB_DIR/"
+	rm -rf $DB_OUTPUT
+	echo "Database $DB_TYPE installed at $DB_DIR"
 fi
 
 echo "Installing dependencies"
