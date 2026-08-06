@@ -92,7 +92,7 @@ DB_TYPE="w08"
 DB_NAME="db_$DB_TYPE"
 DB_URL="https://sourceforge.net/projects/astap-program/files/star_databases/w08_star_database_mag08_astap.zip/download"
 DB_OUTPUT="$DB_NAME.zip"
-DB_DIR="/home/pi/QuadStar_Auxillary_Computer/src/platesolving/dbs"
+DB_DIR="/home/pi/QuadStar_Auxillary_Computer/src/platesolving/ASTAP_DB"
 mkdir -p $DB_DIR
 
 if [ -d "$DB_DIR/" ]; then
