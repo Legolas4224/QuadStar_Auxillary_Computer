@@ -8,7 +8,7 @@ mkdir -p /home/pi/images
 mkdir -p /home/pi/images/QuadStar
 
 # Startup script setup
-echo '#!/bin/bash
+sudo echo '#!/bin/bash
 
 # /etc/init.d/quadstar-startup.sh
 ### BEGIN INIT INFO
@@ -21,23 +21,27 @@ echo '#!/bin/bash
 # Description:       Enable service provided by daemon.
 ### END INIT INFO
 
-sudo bash /home/pi/startup.sh > /home/pi/startup_logs/startup_*/5 * * * * /home/pi/test_job.sh > "/home/pi/startup_logs/$(/bin/date +\%Y\%m\%d-\%H\%M\%S).log" 2>&1' > /etc/init.d/quadstar-startup.sh
-chmod +x /etc/init.d/quadstar-startup.sh
-update-rc.d quadstar-startup.sh default
+sudo bash /home/pi/startup.sh > "/home/pi/startup_logs/$(/bin/date +\%Y\%m\%d-\%H\%M\%S).log" 2>&1' > /etc/init.d/quadstar-startup.sh
+cd /etc/init.d/quadstar-startup.sh
+sudo chmod +x /etc/init.d/quadstar-startup.sh
+sudo update-rc.d quadstar-startup.sh defaults
+cd /home/pi
 
 echo '#!/bin/bash
 cd /home/pi/QuadStar_Auxillary_Computer
 source .venv/bin/activate
 python3 src/main.py 0.3 1.0 3
 chown -R pi:pi /home/pi/images/
-./sync.sh
+# ./sync.sh
 ' > /home/pi/startup.sh
 chmod +x /home/pi/startup.sh
 mkdir -p /home/pi/startup_logs
 
 cd /home/pi/QuadStar_Auxillary_Computer
-set -euo pipefail
 
+if [-f "./src/platesolving/astap_cli"]; then
+
+set -euo pipefail
 # Detect architecture and map to ASTAP's naming convention
 ARCH_RAW="$(uname -m)"
 
@@ -73,6 +77,12 @@ rm -rf astap_cli.zip
 chmod +x astap_cli
 mv astap_cli /home/pi/QuadStar_Auxillary_Computer/src/platesolving/astap_cli
 echo "ASTAP Installed at /home/pi/QuadStar_Auxillary_Computer/src/platesolving/astap_cli"
+
+else
+
+echo "ASTAP Already installed"
+
+fi
 
 echo "Installing dependencies"
 sudo apt install -y build-essential libcap-dev python3-dev python3-libcamera python3-kms++ apt-listchanges
