@@ -23,7 +23,7 @@ worker_loop() {
 		local start
 		start=$(date +%s)
 
-		setsid "$@" >/dev/null
+		setsid "$@" >/dev/null &
 		local cmd_pid=$!
 
 		{
@@ -49,7 +49,7 @@ worker_loop() {
 }
 
 capture_interval=180
-zip_interval=120
+zip_interval=60
 solve_interval=120
 
 worker_loop "$capture_interval" capture ./capture.sh &

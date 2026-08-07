@@ -1,5 +1,6 @@
 [Unit]
 Description=QuadStar Auxillary Computer - capture, zip and platesole pipeline
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
@@ -11,7 +12,6 @@ ExecStart=/home/pi/QuadStar_Auxillary_Computer/run_quadstar.sh
 # Restart if crash
 Restart=on-failure
 RestartSec=10
-StartLimitIntervalSec=0
 
 # Send SIGTERM to all scripts
 # When stopping give them time to clean up before SIGKILL
@@ -19,7 +19,7 @@ KillMode=control-group
 TimeoutStopSec=15
 
 # Discard stdout, keep stderr
-StandardOutput=null
+StandardOutput=journal
 StandardError=journal
 
 [Install]
