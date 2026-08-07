@@ -335,10 +335,10 @@ def main(raw_image_path, filetype, fits_dir=None):
 # ==============================================================================
 
 def cleanup_files(out_dir_path: str): 
-    # new_out_name: str = raw_image_path.removesuffix(".solve") + ".done"
-    # os.rename(raw_image_path, new_out_name)
+    new_out_name: str = raw_image_path.removesuffix(".solve") + ".done"
+    print(f"Should be renaming: {raw_image_path} -> {new_out_name}")
+    os.rename(raw_image_path, new_out_name)
 
-    # TODO: Add rm of the -fits path here  
     exit(1)
 
 if __name__ == "__main__":
