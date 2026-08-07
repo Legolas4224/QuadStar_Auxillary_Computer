@@ -4,13 +4,13 @@ set -uo pipefail
 
 prog_dir="/home/pi/QuadStar_Auxillary_Computer"
 images_dir="/home/pi/images/QuadStar"
-poll_interval=120 # seconds
+hang_timeout=360
 
 cd "$prog_dir" || { echo "Error: cannot cd to $prog_dir" >&2; exit 1; }
 source "$prog_dir/.venv/bin/activate" 
 
 cleanup () {
-	echo "Cleaning up..."
+	# echo "Cleaning up..." # is erroring with 'broken pipe'
 	kill $(jobs -p) 2>/dev/null | true
 }
 trap cleanup EXIT INT TERM
@@ -23,7 +23,23 @@ worker_loop() {
 		local start
 		start=$(date +%s)
 
-		"$@" > /dev/null
+		setsid "$@" >/dev/null
+		local cmd_pid=$!
+
+		{
+			sleep "$hang_timeout"
+			if kill -0 "$cmd_pid" 2>/dev/null; then
+				echo "$name: killed after exceeding ${hang_timeout}s (hang)" >&2
+				kill -TERM -"$cmd_pid" 2>/dev/null
+				sleep 10
+				kill -KILL -"$cmd_pid" 2>/dev/null
+			fi
+		} &
+		local watchdog_pid=$!
+
+		wait "$cmd_pid" 2>/dev/null
+		kill "$watchdog_pid" 2>/dev/null
+		wait "$watchdog_pid" 2>/dev/null
 
 		local elapsed=$(( $(date +%s) - start))
 		if (( elapsed < interval )); then
@@ -39,26 +55,6 @@ solve_interval=120
 worker_loop "$capture_interval" capture ./capture.sh &
 worker_loop "$zip_interval" zip_images ./zip_images.sh &
 worker_loop "$solve_interval" solve ./solve.sh &
-wait
 
-# -- Old Method
-#
-# while true; do
-# 	echo "=== Cycle start: $(date '+%Y-%m-%d %H:%M:%S') ==="
-# 
-# 	./capture.sh &
-# 	capture_pid=$!
-# 
-# 	./zip_images.sh &
-# 	zip_pid=$!
-# 
-# 	run_solve_pass &
-# 	solve_pid=$!
-# 
-# 	wait "$capture_pid" "$zip_pid" "$solve_pid"
-# 
-# 	echo "=== Cycle done ==="
-# 	sleep "$poll_interval"
-# done
-
-
+# wait here forever so all children are kept alive
+wait 

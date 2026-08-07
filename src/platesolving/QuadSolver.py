@@ -304,12 +304,8 @@ def main(raw_image_path, filetype, fits_dir=None):
     except subprocess.TimeoutExpired as e:
         print("Timeout: {e}", file=sys.stderr)
     log_path = output_path.removesuffix(".stacked")
-    ra_str, dec_str = get_ra_dec(log_path + ".log")
+    ra_str, dec_str = get_ra_dec(log_path + ".log") 
  
-    # potential
-    if False:
-        os.rmdir(fits_dir)
-    
     new_out_name: str = output_path.removesuffix(".solve") + ".done"
     os.rename(output_path, new_out_name)
 
