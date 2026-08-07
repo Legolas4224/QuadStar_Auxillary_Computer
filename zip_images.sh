@@ -70,7 +70,7 @@ for folder in "${FOLDERS[@]}"; do
     # Create the archive with zstd --ultra -22 (max compression).
     # This is CPU-heavy and slow — expect it to take a while per folder,
     # especially on a Pi 5 with lots of raw DNG data.
-    if tar -I 'zstd --ultra -22' -cf "$archive" "$name"; then
+    if tar -I 'zstd -5' -cf "$archive" "$name"; then
         # Verify the archive isn't corrupt before deleting the source
         if zstd -t "$archive" >/dev/null 2>&1; then
             rm -rf -- "$name"

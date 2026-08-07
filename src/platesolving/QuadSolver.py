@@ -153,13 +153,16 @@ def main(raw_image_path, filetype, fits_dir=None):
     print(f"Looking for {filetype} files in {raw_image_path}")
 
     # ======== Load Images ==========
-    files = sorted(glob.glob(f"{raw_image_path}/*.{filetype}"))
+    file_search_str: str = f"{raw_image_path}/*.{filetype}"
+    print(f"file_search_str: {file_search_str}")
+    files = sorted(glob.glob(file_search_str))
     print(f"Found {len(files)} frames")
     print("Files found:")
     for f in files:
         print(f)
 
     if not files:
+        print(f"Files not found to stack, path:{raw_image_path}", file=sys.stderr)
         raise RuntimeError("No image files found.")
 
     # ======== Convert Raw images to FITS format =========
@@ -222,7 +225,7 @@ def main(raw_image_path, filetype, fits_dir=None):
             f"Average eccentricity for all frames: {(sum(ecc_list)) / (len(ecc_list))}"
         )
     except Exception as e:
-        print(f"Failed to find Average eccentricity for all frames: {e}")
+        print(f"Failed to find Average eccentricity for all frames: {e}", file=sys.stderr)
 
     # ========= Align Images =========
     print("=================================================================")
@@ -241,8 +244,8 @@ def main(raw_image_path, filetype, fits_dir=None):
                 print(f"Successfully aligned image {i}")
                 frames.append(aligned)
                 i += 1
-            except:
-                print(f"Oosp! Alignment failed for image: {f}")
+            except Exception as e:
+                print(f"Oosp! Alignment failed for image: {f} \n REASON: {e}", file=sys.stderr)
         # aligned = []
         print(f"Aligned {len(frames)} images")
     else:
@@ -297,12 +300,19 @@ def main(raw_image_path, filetype, fits_dir=None):
         )
 
     except subprocess.CalledProcessError as e:
-        print(f"Failed: {e}")
-    except subprocess.TimeoutExpired:
-        print("Timeout")
+        print(f"Failed: {e}", file=sys.stderr)
+    except subprocess.TimeoutExpired as e:
+        print("Timeout: {e}", file=sys.stderr)
     log_path = output_path.removesuffix(".stacked")
     ra_str, dec_str = get_ra_dec(log_path + ".log")
  
+    # potential
+    if False:
+        os.rmdir(fits_dir)
+    
+    new_out_name: str = output_path.removesuffix(".solve") + ".done"
+    os.rename(output_path, new_out_name)
+
     try:
         if ra_str is None or dec_str is None:
             print("No plate solution found. Try integrating more frames?")
@@ -315,7 +325,7 @@ def main(raw_image_path, filetype, fits_dir=None):
             print(f"DEC: {dec_to_degrees(dec_str)}")
 
     except Exception as e:
-        print(f"Failed to convert ra or dec: {e}")
+        print(f"Failed to convert ra or dec: {e}", file=sys.stderr)
 
     end_time = time_mod.perf_counter()
     execution_time = end_time - start_time
@@ -324,13 +334,29 @@ def main(raw_image_path, filetype, fits_dir=None):
 
 # ==============================================================================
 
+def cleanup_files(out_dir_path: str): 
+    # new_out_name: str = raw_image_path.removesuffix(".solve") + ".done"
+    # os.rename(raw_image_path, new_out_name)
+
+    # TODO: Add rm of the -fits path here  
+    exit(1)
+
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        if sys.argv[1] == "-f":
-            raw_image_path = sys.argv[2]
+    success: int = 0
+    try:
+        if len(sys.argv) > 1:
+            if sys.argv[1] == "-f":
+                raw_image_path = sys.argv[2].removesuffix("/")
+                
+        if len(sys.argv) > 3:
+            if sys.argv[3] == "-t":
+                raw_image_type = sys.argv[4].removeprefix(".")
 
-    if len(sys.argv) > 3:
-        if sys.argv[3] == "-o":
-            main(raw_image_path, raw_image_type, sys.argv[4])
+        main(raw_image_path, raw_image_type)
 
-    main(raw_image_path, raw_image_type)
+    except Exception as err:
+        print(f"-- QuadSolver FAILED -- \n\t REASON: {err}", file=sys.stderr)       
+        success = 1
+    
+    cleanup_files(raw_image_path)
+    exit(success)
