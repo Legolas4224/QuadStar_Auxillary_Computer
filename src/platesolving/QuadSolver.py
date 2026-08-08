@@ -116,30 +116,13 @@ def get_stats(image_path) :
     y_min = ROI_Border * sensor_height
     y_max = (1 - ROI_Border) * sensor_height
 
-    good_stars = []
+    #good_stars = []
     #for source in sources:
     #    if x_min < source["x_centroid"] < x_max:
     #        if y_min < source["y_centroid"] < y_max:
     #            print("star accepted")
+    #           good_stars.append(source)
     #    else :
-            #good_stars.append(source)
-
-
-
-
-    #print(sources)
-    results = []
-
-    #for star in sources:
-    #    m = measure_star(image, star["x_centroid"], star["y_centroid"])
-    #    if m is not None:
-    #        results.append(m)
-
-    #results = np.array(results)
-    #print(sources[0])
-
-    #median_fwhm = np.median(results[:, 0])
-    #median_ecc = np.median(results[:, 1])
 
     stars_found = len(sources)
     median_roundness = np.median(np.abs(sources["roundness1"]))
@@ -258,16 +241,14 @@ def main(raw_image_path, filetype, fits_dir=None):
 
         image_quality_dict = {}
         for image in converted_files:
-            #background_level = np.median(image)
             background_level, stars_found, median_roundness, median_sharpness, max_pixel, min_pixel = get_stats(image)
-            #print("getFWHM succeeded")
             print(f"Max brightness: {max_pixel}, Min brightness: {min_pixel}")
             print(f"Found {stars_found} stars. Median Roundness: {median_roundness}. Median Sharpness: {median_sharpness}")
             print(f"Background Level: {background_level}")
             image_quality_dict[image] = median_roundness, median_sharpness
-            if stars_found < 10 :
+            if stars_found < 5 :
                 print(f"Fewer than 10 stars detected ({stars_found})")
-                
+
 
         stats = np.array(list(image_quality_dict.values()))
 
@@ -303,18 +284,6 @@ def main(raw_image_path, filetype, fits_dir=None):
                 good_subs.append(image)
             
 
-
-
-            #median_eccentricity, reject = measure_stars(image)
-            #
-            #if reject:
-            #    converted_files.remove(image)
-            #    print(f"Removed image <{image}> from processing pipeline")
-            ## print(median_eccentricity)
-            #ecc_list.append(median_eccentricity)
-        #print(
-        #    f"Average eccentricity for all frames: {(sum(ecc_list)) / (len(ecc_list))}"
-        #)
     except Exception as e:
         print(
             f"Failed to find Average eccentricity for all frames: {e}", file=sys.stderr
