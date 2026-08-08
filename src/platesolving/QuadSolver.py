@@ -21,6 +21,7 @@ import sys
 from typing import Any
 from photutils.detection import DAOStarFinder
 from astropy.stats import sigma_clipped_stats
+from ImageCalibration import dark_calibrate_light
 
 # ========== GLOBAL PARAMS ==================
 focal_length = 5.0  # mm
@@ -243,6 +244,15 @@ def main(raw_image_path, filetype, fits_dir=None):
         datetimes
     )  # Images will have been captured close to each other, so the time from the first image will be fine.
 
+    # ========= Calibrate Images =========
+   # calibrated_images = []
+   # for image in converted_files :
+   #     data = fits.getdata(image).astype(np.float32)
+   #     calibrated = dark_calibrate_light(data)
+   #     calibrated_images.append(calibrated)
+
+
+
     # ========= Measure Stats for images ========
     
     try:
@@ -297,7 +307,7 @@ def main(raw_image_path, filetype, fits_dir=None):
 
     except Exception as e:
         print(
-            f"Failed to find Average eccentricity for all frames: {e}", file=sys.stderr
+            f"WARNING: Image measurement exception! {e}", file=sys.stderr
         )
     # ========= Align Images =========
     print("=================================================================")
