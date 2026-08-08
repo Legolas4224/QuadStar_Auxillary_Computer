@@ -22,9 +22,6 @@ QuadSolver is a module that :
 ##### Testing runs
 To test you can run with:
 ```
-```
-````
-```
 python3 src/platesolving/QuadSolver.py \
     -f '/path/to/raw/images' \
     -t '<.tiff or .dng>' \
