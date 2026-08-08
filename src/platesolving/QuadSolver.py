@@ -20,7 +20,7 @@ import time as time_mod
 import sys
 
 # ========== GLOBAL PARAMS ==================
-focal_length = 4.5  # mm
+focal_length = 5.0  # mm
 pixel_size = 1.55  # microns
 sensor_width = 4056  # px
 sensor_height = 3040  # px
@@ -28,12 +28,13 @@ sensor_height = 3040  # px
 # Measurements
 ROI_Border = 0.2  # reject stars within this fraction of the edge of the frame
 
-raw_image_path = (
-    "/home/thomas/Documents/Code/QuadStar/platesolving/test_images/SkyTest3/0.5s_5/"
-)
-raw_image_type = "tiff"  # dng
+raw_image_path = None # (
+#    "/home/thomas/Documents/Code/QuadStar/platesolving/test_images/SkyTest3/0.5s_5/"
+# )
+raw_image_type = "tiff"  # or dng
 
 ASTAP_PROG_NAME: str = "/home/pi/QuadStar_Auxillary_Computer/src/platesolving/astap_cli"
+ASTAP_DB_DIR: str = "/home/pi/QuadStar_Auxillary_Computer/src/platesolving/ASTAP_DB"
 
 # ===========================================
 
@@ -62,6 +63,18 @@ def add_RADEC_to_fits(file, coordinates_dict, average_obstime):
     # 3. Save the modified header back to disk
     fits.writeto(file, data, header, overwrite=True)
 
+def write_to_fits_header(file: str, keyword: str | list[str], data: Any) -> None:
+    file_data, header = fits.getdata(file, header=True)
+
+    if isinstance(keyword, list) and isinstance(data, list):
+        for k, d in zip(keyword, data):
+            header[k] = d
+    else:
+        header[keyword] = data
+
+    fits.writeto(file, file_data, header, overwrite=True)
+
+    return
 
 def sigma_clipped_stack(frames, sigma=2.5):
 
@@ -266,7 +279,9 @@ def main(raw_image_path, filetype, fits_dir=None):
     #     print("Stacked images directory does not exist. Creating!")
     # except:
     #     print("Found stacked image directory")
-    output_path = f"{STACKED_DIR}/{obstime}.fits.stacked"
+
+    # output_path = f"{STACKED_DIR}/{obstime}.fits.stacked" # old
+    output_path = f"{STACKED_DIR}/{obstime}.fits"
     fits.writeto(output_path, result, overwrite=True)
     print(f"Integration Complete: Image saved as {output_path}")
 
@@ -280,6 +295,7 @@ def main(raw_image_path, filetype, fits_dir=None):
     }
     add_RADEC_to_fits(output_path, coordinates_dict, obstime)
 
+    # ASTAP_PROG_NAME = "/usr/sbin/astap_cli" # test value
     # ========= Run ASTAP =========
     print("=================================================================")
     print("Running ASTAP on integrated image...")
@@ -293,7 +309,7 @@ def main(raw_image_path, filetype, fits_dir=None):
                 "-f",
                 output_path,
                 "-d",
-                "/home/pi/QuadStar_Auxillary_Computer/src/platesolving/ASTAP_DB",
+                ASTAP_DB_DIR,
                 "-log",
             ],
             env=env,
@@ -303,22 +319,24 @@ def main(raw_image_path, filetype, fits_dir=None):
         print(f"Failed: {e}", file=sys.stderr)
     except subprocess.TimeoutExpired as e:
         print("Timeout: {e}", file=sys.stderr)
-    log_path = output_path.removesuffix(".stacked")
-    ra_str, dec_str = get_ra_dec(log_path + ".log") 
+    log_path = output_path.removesuffix(".fits") # MAKE SURE TO HAVE THE FILE NAMED .fits !!!!!!
+    ra_str, dec_str = get_ra_dec(log_path + ".log")
  
-    new_out_name: str = output_path.removesuffix(".solve") + ".done"
-    os.rename(output_path, new_out_name)
-
     try:
         if ra_str is None or dec_str is None:
             print("No plate solution found. Try integrating more frames?")
         else:
-            ra_hrs = ra_to_degrees(ra_str) / 15.0
+            ra_degs = ra_to_degrees(ra_str)
+            ra_hrs = ra_degs / 15.0
             dec_degs = dec_to_degrees(dec_str)
             print(f"------------------------------------")
-            print("SUCCESS!")
-            print(f"RA : {ra_to_degrees(ra_str)}")
-            print(f"DEC: {dec_to_degrees(dec_str)}")
+            if (ra_degs == coordinates.ra) and (dec_degs == coordinates.dec):
+                print("FAILED!")
+                write_to_fits_header(output_path, "SUCCESS", "false")
+            else:    
+                print("SUCCESS!")
+                print(f"RA : {ra_deg}")
+                print(f"DEC: {dec_deg}")
 
     except Exception as e:
         print(f"Failed to convert ra or dec: {e}", file=sys.stderr)
@@ -348,11 +366,23 @@ if __name__ == "__main__":
             if sys.argv[3] == "-t":
                 raw_image_type = sys.argv[4].removeprefix(".")
 
+        if len(sys.argv) > 5:
+            if sys.argv[5] == "-d":
+                ASTAP_DB_DIR = sys.argv[6]
+                if ASTAP_DB_DIR[-1] == "/":
+                    ASTAP_DB_DIR = ASTAP_DB_DIR.removesuffix("/")
+
+        if raw_image_path is None:
+            success = 1
+            raise TypeError("You need to tell QuadSolver.py where your files are!\n"
+                            "Use the flag -f eg. 'python3 QuadSolver.py -f /where/files/are/stored ' ")
+
         main(raw_image_path, raw_image_type)
 
     except Exception as err:
         print(f"-- QuadSolver FAILED -- \n\t REASON: {err}", file=sys.stderr)       
         success = 1
     
-    cleanup_files(raw_image_path)
+    if raw_image_path is not None:
+        cleanup_files(raw_image_path)
     exit(success)
