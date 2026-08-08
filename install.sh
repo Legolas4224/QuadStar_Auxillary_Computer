@@ -7,7 +7,7 @@ fi
 
 sudo apt update
 sudo apt upgrade
-sudo apt install git vim zip unzip zstd tar
+sudo apt install git vim zip unzip zstd tar util-linux-extra watchdog
 
 mkdir -p /home/pi/images
 mkdir -p /home/pi/images/QuadStar
