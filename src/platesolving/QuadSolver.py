@@ -28,7 +28,7 @@ sensor_height = 3040  # px
 # Measurements
 ROI_Border = 0.2  # reject stars within this fraction of the edge of the frame
 
-raw_image_path = None # (
+raw_image_path = None  # (
 #    "/home/thomas/Documents/Code/QuadStar/platesolving/test_images/SkyTest3/0.5s_5/"
 # )
 raw_image_type = "tiff"  # or dng
@@ -63,6 +63,7 @@ def add_RADEC_to_fits(file, coordinates_dict, average_obstime):
     # 3. Save the modified header back to disk
     fits.writeto(file, data, header, overwrite=True)
 
+
 def write_to_fits_header(file: str, keyword: str | list[str], data: Any) -> None:
     file_data, header = fits.getdata(file, header=True)
 
@@ -75,6 +76,7 @@ def write_to_fits_header(file: str, keyword: str | list[str], data: Any) -> None
     fits.writeto(file, file_data, header, overwrite=True)
 
     return
+
 
 def sigma_clipped_stack(frames, sigma=2.5):
 
@@ -238,7 +240,9 @@ def main(raw_image_path, filetype, fits_dir=None):
             f"Average eccentricity for all frames: {(sum(ecc_list)) / (len(ecc_list))}"
         )
     except Exception as e:
-        print(f"Failed to find Average eccentricity for all frames: {e}", file=sys.stderr)
+        print(
+            f"Failed to find Average eccentricity for all frames: {e}", file=sys.stderr
+        )
 
     # ========= Align Images =========
     print("=================================================================")
@@ -258,7 +262,10 @@ def main(raw_image_path, filetype, fits_dir=None):
                 frames.append(aligned)
                 i += 1
             except Exception as e:
-                print(f"Oosp! Alignment failed for image: {f} \n REASON: {e}", file=sys.stderr)
+                print(
+                    f"Oosp! Alignment failed for image: {f} \n REASON: {e}",
+                    file=sys.stderr,
+                )
         # aligned = []
         print(f"Aligned {len(frames)} images")
     else:
@@ -319,9 +326,11 @@ def main(raw_image_path, filetype, fits_dir=None):
         print(f"Failed: {e}", file=sys.stderr)
     except subprocess.TimeoutExpired as e:
         print("Timeout: {e}", file=sys.stderr)
-    log_path = output_path.removesuffix(".fits") # MAKE SURE TO HAVE THE FILE NAMED .fits !!!!!!
+    log_path = output_path.removesuffix(
+        ".fits"
+    )  # MAKE SURE TO HAVE THE FILE NAMED .fits !!!!!!
     ra_str, dec_str = get_ra_dec(log_path + ".log")
- 
+
     try:
         if ra_str is None or dec_str is None:
             print("No plate solution found. Try integrating more frames?")
@@ -333,7 +342,7 @@ def main(raw_image_path, filetype, fits_dir=None):
             if (ra_degs == coordinates.ra) and (dec_degs == coordinates.dec):
                 print("FAILED!")
                 write_to_fits_header(output_path, "SUCCESS", "false")
-            else:    
+            else:
                 print("SUCCESS!")
                 print(f"RA : {ra_deg}")
                 print(f"DEC: {dec_deg}")
@@ -348,12 +357,14 @@ def main(raw_image_path, filetype, fits_dir=None):
 
 # ==============================================================================
 
-def cleanup_files(out_dir_path: str): 
+
+def cleanup_files(out_dir_path: str):
     new_out_name: str = raw_image_path.removesuffix(".solve") + ".done"
     print(f"Should be renaming: {raw_image_path} -> {new_out_name}")
     os.rename(raw_image_path, new_out_name)
 
     exit(1)
+
 
 if __name__ == "__main__":
     success: int = 0
@@ -361,7 +372,7 @@ if __name__ == "__main__":
         if len(sys.argv) > 1:
             if sys.argv[1] == "-f":
                 raw_image_path = sys.argv[2].removesuffix("/")
-                
+
         if len(sys.argv) > 3:
             if sys.argv[3] == "-t":
                 raw_image_type = sys.argv[4].removeprefix(".")
@@ -372,17 +383,23 @@ if __name__ == "__main__":
                 if ASTAP_DB_DIR[-1] == "/":
                     ASTAP_DB_DIR = ASTAP_DB_DIR.removesuffix("/")
 
+        if len(sys.argv) > 7:
+            if sys.argv[7] == "-e":
+                ASTAP_PROG_NAME = sys.argv[8]
+
         if raw_image_path is None:
             success = 1
-            raise TypeError("You need to tell QuadSolver.py where your files are!\n"
-                            "Use the flag -f eg. 'python3 QuadSolver.py -f /where/files/are/stored ' ")
+            raise TypeError(
+                "You need to tell QuadSolver.py where your files are!\n"
+                "Use the flag -f eg. 'python3 QuadSolver.py -f /where/files/are/stored ' "
+            )
 
         main(raw_image_path, raw_image_type)
 
     except Exception as err:
-        print(f"-- QuadSolver FAILED -- \n\t REASON: {err}", file=sys.stderr)       
+        print(f"-- QuadSolver FAILED -- \n\t REASON: {err}", file=sys.stderr)
         success = 1
-    
+
     if raw_image_path is not None:
         cleanup_files(raw_image_path)
     exit(success)
