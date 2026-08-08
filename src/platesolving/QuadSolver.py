@@ -66,7 +66,7 @@ def add_RADEC_to_fits(file, coordinates_dict, average_obstime):
     fits.writeto(file, data, header, overwrite=True)
 
 
-def write_to_fits_header(file: str, keyword: str | list[str], data: Any) -> None:
+def write_to_fits_header(file: str, keyword: str | list[str], data) -> None:
     file_data, header = fits.getdata(file, header=True)
 
     if isinstance(keyword, list) and isinstance(data, list):
