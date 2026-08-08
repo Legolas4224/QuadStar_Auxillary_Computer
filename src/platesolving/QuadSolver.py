@@ -18,6 +18,9 @@ from photutils.segmentation import detect_sources, SourceCatalog
 from world_dir import ra_to_degrees, dec_to_degrees, get_ra_dec
 import time as time_mod
 import sys
+from typing import Any
+from photutils.detection import DAOStarFinder
+from astropy.stats import sigma_clipped_stats
 
 # ========== GLOBAL PARAMS ==================
 focal_length = 5.0  # mm
@@ -94,35 +97,40 @@ def sigma_clipped_stack(frames, sigma=2.5):
     return stacked
 
 
-def get_FWHM(image_path):  # UNUSED
-    from photutils.detection import DAOStarFinder
-    from astropy.stats import sigma_clipped_stats
+def get_stats(image_path) :  
+    
 
     image = fits.getdata(image_path)
     mean, median, std = sigma_clipped_stats(image)
-
+    maximum, minimum = np.max(image), np.min(image)
+    background = median
     finder = DAOStarFinder(
         threshold=5 * std,
         fwhm=3.0,
     )
 
     sources = finder(image - median)
-    print(sources)
-    results = []
 
-    for star in sources:
-        m = measure_star(image, star["x_centroid"], star["y_centroid"])
-        if m is not None:
-            results.append(m)
+    # ==== Define ROI =====
+    # Should be an x and a y range where star measurements are accepted
+    x_min = ROI_Border * sensor_width
+    x_max = (1 - ROI_Border) * sensor_width
+    y_min = ROI_Border * sensor_height
+    y_max = (1 - ROI_Border) * sensor_height
 
-    results = np.array(results)
+    #good_stars = []
+    #for source in sources:
+    #    if x_min < source["x_centroid"] < x_max:
+    #        if y_min < source["y_centroid"] < y_max:
+    #            print("star accepted")
+    #           good_stars.append(source)
+    #    else :
 
-    median_fwhm = np.median(results[:, 0])
-    median_ecc = np.median(results[:, 1])
+    stars_found = len(sources)
+    median_roundness = np.median(np.abs(sources["roundness1"]))
+    median_sharpness = np.median(sources["sharpness"])
 
-    print("Stars:", len(results))
-    print("Median FWHM:", median_fwhm)
-    print("Median eccentricity:", median_ecc)
+    return background, stars_found, median_roundness, median_sharpness, maximum, minimum
 
 
 def measure_stars(image_path):
@@ -236,34 +244,64 @@ def main(raw_image_path, filetype, fits_dir=None):
     )  # Images will have been captured close to each other, so the time from the first image will be fine.
 
     # ========= Measure Stats for images ========
+    
     try:
         print("=================================================================")
         print("Measuring Star Stats...")
         ecc_list = []
-        stat_dict = {}
-        for image in converted_files:
-            median_eccentricity, num_stars, reject = measure_stars(image)
-            stat_dict[image] = num_stars
 
+        image_quality_dict = {}
+        for image in converted_files:
+            background_level, stars_found, median_roundness, median_sharpness, max_pixel, min_pixel = get_stats(image)
+            print(f"Max brightness: {max_pixel}, Min brightness: {min_pixel}")
+            print(f"Found {stars_found} stars. Median Roundness: {median_roundness}. Median Sharpness: {median_sharpness}")
+            print(f"Background Level: {background_level}")
+            image_quality_dict[image] = median_roundness, median_sharpness
+            if stars_found < 5 :
+                print(f"Fewer than 10 stars detected ({stars_found})")
+
+
+        stats = np.array(list(image_quality_dict.values()))
+
+        clipped = sigma_clip(
+            stats,
+            sigma=2.5,
+            axis=0
+        )
+
+        # Statistics after removing outliers
+        medians = np.ma.median(clipped, axis=0)
+        stds = np.ma.std(clipped, axis=0)
+
+        #print(f"Median stars:      {medians[0]:.2f}")
+        print(f"Median roundness:  {medians[0]:.3f}")
+        print(f"Median sharpness:  {medians[1]:.3f}")
+
+        #print(f"Stars std:         {stds[0]:.2f}")
+        print(f"Roundness std:     {stds[0]:.3f}")
+        print(f"Sharpness std:     {stds[1]:.3f}")
+                    
+        rejected = np.any(clipped.mask, axis=1)
+        #print(rejected)
+
+        good_subs = []
+        for image, reject in zip(image_quality_dict.keys(), rejected):
 
             if reject:
+                print("REJECTED:", image)
                 converted_files.remove(image)
-                print(f"Removed image <{image}> from processing pipeline")
-            # print(median_eccentricity)
-            ecc_list.append(median_eccentricity)
+            else:
+                print("KEEP:", image)
+                good_subs.append(image)
+            
 
-        
-        print(
-            f"Average eccentricity for all frames: {(sum(ecc_list)) / (len(ecc_list))}"
-        )
     except Exception as e:
         print(
             f"Failed to find Average eccentricity for all frames: {e}", file=sys.stderr
         )
-
     # ========= Align Images =========
     print("=================================================================")
-    reference = fits.getdata(converted_files[0]).astype(np.float32)
+    reference = fits.getdata(converted_files[3]).astype(np.float32)
     frames = [
         reference
     ]  # np.array([fits.getdata(f).astype(np.float32) for f in files])
@@ -275,6 +313,8 @@ def main(raw_image_path, filetype, fits_dir=None):
                 source = fits.getdata(f).astype(np.float32)
                 # Returns the aligned image and the transformation used
                 aligned, footprint = aa.register(source, reference)
+                #transf, (source_list, target_list) = aa.find_transform(source, reference)
+                #print(transf)
                 print(f"Successfully aligned image {i}")
                 frames.append(aligned)
                 i += 1
@@ -362,8 +402,8 @@ def main(raw_image_path, filetype, fits_dir=None):
                 write_to_fits_header(output_path, "SUCCESS", "false")
             else:
                 print("SUCCESS!")
-                print(f"RA : {ra_deg}")
-                print(f"DEC: {dec_deg}")
+                print(f"RA : {ra_degs} : {ra_hrs} hrs")
+                print(f"DEC: {dec_degs}")
 
     except Exception as e:
         print(f"Failed to convert ra or dec: {e}", file=sys.stderr)
@@ -377,9 +417,9 @@ def main(raw_image_path, filetype, fits_dir=None):
 
 
 def cleanup_files(out_dir_path: str):
-    new_out_name: str = raw_image_path.removesuffix(".solve") + ".done"
-    print(f"Should be renaming: {raw_image_path} -> {new_out_name}")
-    os.rename(raw_image_path, new_out_name)
+    #new_out_name: str = raw_image_path.removesuffix(".solve") + ".done"
+    #print(f"Should be renaming: {raw_image_path} -> {new_out_name}")
+    #os.rename(raw_image_path, new_out_name)
 
     exit(1)
 
