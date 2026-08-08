@@ -27,6 +27,7 @@ focal_length = 5.0  # mm
 pixel_size = 1.55  # microns
 sensor_width = 4056  # px
 sensor_height = 3040  # px
+bayer_pattern = "BGGR"
 
 # Measurements
 ROI_Border = 0.2  # reject stars within this fraction of the edge of the frame
@@ -57,6 +58,7 @@ def add_RADEC_to_fits(file, coordinates_dict, average_obstime):
 
     header["SECPIX"] = (image_scale, "image scale in arcsec/pixel")
     header["DATE-OBS"] = (obstime.isoformat(), "UTC date and time when script ran")
+    header["BAYERPAT"] = (bayer_pattern, "Bayer matrix config for demosaicing images")
 
     # Optional: Add descriptive comments
     header.comments["RA"] = "Right Ascension in decimal degrees"
@@ -67,7 +69,7 @@ def add_RADEC_to_fits(file, coordinates_dict, average_obstime):
     fits.writeto(file, data, header, overwrite=True)
 
 
-def write_to_fits_header(file: str, keyword: str | list[str], data: Any) -> None:
+def write_to_fits_header(file: str, keyword: str | list[str], data) -> None:
     file_data, header = fits.getdata(file, header=True)
 
     if isinstance(keyword, list) and isinstance(data, list):
@@ -84,10 +86,10 @@ def write_to_fits_header(file: str, keyword: str | list[str], data: Any) -> None
 def sigma_clipped_stack(frames, sigma=2.5):
 
     print(f"Integrating Frames")
-    """
-        Stack frames using sigma-clipped mean.
-        Each pixel position is evaluated independently across all frames.
-        """
+    
+    # Stack frames using sigma-clipped mean.
+    # Each pixel position is evaluated independently across all frames.
+    
     # sigma_clip returns a masked array — rejected values are masked out
     clipped = sigma_clip(frames, sigma=sigma, axis=0, maxiters=3)
     # Mean of non-rejected values at each pixel position
@@ -140,6 +142,11 @@ def measure_stars(image_path):
     segment_map = detect_sources(image, threshold, n_pixels=5)
 
     catalog = SourceCatalog(image, segment_map)
+    # The idea here is to detect any images that shouldn't be included in the stack, due to lack of stars, signal, etc
+    num_stars = len(catalog)
+
+
+
     eccentricities = []
     # ==== Define ROI =====
     # Should be an x and a y range where star measurements are accepted
@@ -160,10 +167,14 @@ def measure_stars(image_path):
     if median_ecc > 0.9:
         print(f"Frame should be rejected, median eccentricity = {median_ecc}")
         reject = True
-    else:
+    elif num_stars < 10 :
+        print(f"Found fewer than 10 stars ({stars}). Reject.")
+        reject = True
+    else :
         reject = False
+
     # print(np.median(ecc))
-    return median_ecc, reject
+    return median_ecc, num_stars, reject
 
 
 # ==========================================================================
@@ -378,6 +389,7 @@ def main(raw_image_path, filetype, fits_dir=None):
     ra_str, dec_str = get_ra_dec(log_path + ".log")
 
     try:
+        print(ra_str, dec_str)
         if ra_str is None or dec_str is None:
             print("No plate solution found. Try integrating more frames?")
         else:
