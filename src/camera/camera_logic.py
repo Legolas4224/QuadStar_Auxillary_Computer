@@ -5,6 +5,18 @@ import os
 import subprocess
 from datetime import datetime
 from tifffile import imwrite
+import csv
+
+# Source - https://stackoverflow.com/a/61260083
+# Posted by Gittb
+# Retrieved 2026-08-09, License - CC BY-SA 4.0
+
+def read_uint12(data_chunk):
+    data = np.frombuffer(data_chunk, dtype=np.uint8)
+    fst_uint8, mid_uint8, lst_uint8 = np.reshape(data, (data.shape[0] // 3, 3)).astype(np.uint16).T
+    fst_uint12 = (fst_uint8 << 4) + (mid_uint8 >> 4)
+    snd_uint12 = (lst_uint8 << 4) + (np.bitwise_and(15, mid_uint8))
+    return np.reshape(np.concatenate((fst_uint12[:, None], snd_uint12[:, None]), axis=1), 2 * fst_uint12.shape[0])
 
 
 class CameraLogic:
@@ -64,6 +76,9 @@ class CameraLogic:
     def capture_rgb(self):
         return self.picam2.capture_array()[:, :, :3]
 
+
+
+
     def run_exposures(self, exposure_seconds, gain, num_exposures):
         self.picam2.configure(self.still_config)
         self.start()
@@ -102,6 +117,18 @@ class CameraLogic:
             print(
                 f"Took picture at: Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}"
             )
+
+            # Calculate median values - calculate median from img_array, open csv file, append to csv
+            median = np.median(img_array)
+            print(median)
+            stats_list = [exposure_seconds, median]
+            with open("data.csv", mode="a", newline="", encoding="utf-8") as file:
+                writer = csv.writer(file)
+                writer.writerow(stats_list)
+            
+            
+                
+
 
     def collect_calibration_data(self):
         self.picam2.configure(self.still_config)
