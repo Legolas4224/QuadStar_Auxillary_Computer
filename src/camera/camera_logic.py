@@ -5,7 +5,7 @@ import os
 import subprocess
 from datetime import datetime
 from tifffile import imwrite
-
+import csv
 
 class CameraLogic:
     # Initialise camera
@@ -102,6 +102,10 @@ class CameraLogic:
             print(
                 f"Took picture at: Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}"
             )
+            median = np.median(img_array)
+            with open("/home/pi/QuadStar_Auxillary_Computer/img_median.csv", "a") as f:
+                writer = csv.writer(f)
+                writer.writerow([exposure_seconds, median])
 
     def collect_calibration_data(self):
         self.picam2.configure(self.still_config)
