@@ -19,12 +19,6 @@ def main_manual(exposure_length, gain, num_frames):
 	cam.run_exposures(exposure_length,gain,num_frames)
 	cam.close()
 
-def main_exposure():
-	cam = CameraLogic(manual=True)
-	print(f"{cam.supported_controls()}\n\n")
-	cam.adjust_exposure()
-	cam.close()
-
 if __name__ == "__main__":
 	if len(sys.argv) > 1:
 		if sys.argv[1] == '-h':

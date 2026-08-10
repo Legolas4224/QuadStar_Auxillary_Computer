@@ -27,15 +27,15 @@ class CameraLogic:
             sensor={"output_size": (4056, 3040), "bit_depth": 12},
             controls={"FrameDurationLimits": (110, 600000000), "AeEnable": False},
         )
-		self.noIR_config = self.picam2.create_still_configuration(
+        self.noIR_config = self.picam2.create_still_configuration(
 			raw={"format": 'SRGGB10', "size": (4608, 2592)},
 			sensor={"output_size": (4608, 2592), "bit_depth": 10},
 			controls={"FrameDurationLimits": (110, 600000000), "AeEnable": False}
 		)
-		if Picamera2.global_camera_info()[0]["Model"] == 'imx708_wide_noir':
-			self.picam2.configure(self.noIR_config)
-		else:
-	        self.picam2.configure(self.preview_config)
+        if Picamera2.global_camera_info()[0]["Model"] == 'imx708_wide_noir':
+            self.picam2.configure(self.noIR_config)
+        else:
+            self.picam2.configure(self.preview_config)
         self.preview_started = False
 
     # Start camera
@@ -75,24 +75,24 @@ class CameraLogic:
     def capture_rgb(self):
         return self.picam2.capture_array()[:, :, :3]
 
-	def get_sensor_formats(self):
-		for mode in self.picam2.sensor_modes:
-			print(mode)
+    def get_sensor_formats(self):
+        for mode in self.picam2.sensor_modes:
+            print(mode)
 
-	#Capture {num_exposure} images at {exposure_seconds} and {gain}
-	#Save as .dng file
-	def run_exposures(self, exposure_seconds, gain, num_exposures):
-		try:
-			self.picam2.configure(self.still_config)
-			self.start()
-		except:
-			None
+    #Capture {num_exposure} images at {exposure_seconds} and {gain}
+    #Save as .dng file
+    def run_exposures(self, exposure_seconds, gain, num_exposures, filepath=None):
+        try:
+            self.picam2.configure(self.still_config)
+            self.start()
+        except:
+            None
 
-		capture_dir = f"/home/pi/images/QuadStar/{datetime.now():%Y%m%d_%H%M%S}_e-{exposure_seconds}_g-{gain}_n-{num_exposures}"
-		os.makedirs(capture_dir, exist_ok=True)
+        capture_dir = f"/home/pi/images/QuadStar/{datetime.now():%Y%m%d_%H%M%S}_e-{exposure_seconds}_g-{gain}_n-{num_exposures}"
+        os.makedirs(capture_dir, exist_ok=True)
 
-		exposure_value = exposure_seconds * 10**6
-		self.set_brightness(int(exposure_value), gain)
+        exposure_value = exposure_seconds * 10**6
+        self.set_brightness(int(exposure_value), gain)
 
         # Loop until camera updates new settings
         timeout = time.time() + 2.0
@@ -100,33 +100,42 @@ class CameraLogic:
         while time.time() < timeout:
             metadata = self.get_metadata()
             if (abs(metadata["ExposureTime"] - exposure_value) < 100) and (
-                abs(metadata["AnalogueGain"] - gain_value) < 0.1
+                abs(metadata["AnalogueGain"] - gain) < 0.1
             ):
                 break
-		#Loop until camera updates new settings
-		timeout = time.time() + 2.0
-		metadata = self.get_metadata()
-		while time.time() < timeout:
-			metadata = self.get_metadata()
-			if (abs(metadata["ExposureTime"] - exposure_value) < 100) and (abs(metadata["AnalogueGain"] - gain) < 0.1):
-				break
 
-		#Save raw image to file
-		for n in range(num_exposures):
-			request = self.picam2.capture_request()
-			img_filepath = f"{capture_dir}/e-{metadata['ExposureTime']}({exposure_seconds}s)_g{metadata['AnalogueGain']}_Temp{metadata['SensorTemperature']}_{n}.tiff"
-			img_array = request.make_array(name="raw").view(np.uint16)
-			imwrite(img_filepath, img_array)
-			print(f"array info. flags({img_array.flags}), shape({img_array.shape}), size({img_array.size}), itemsize({img_array.itemsize}), nbytes({img_array.nbytes})")
-			request.release()
-			print(f"Took picture at: Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}")
-            median = np.median(img_array)
-            with open("/home/pi/QuadStar_Auxillary_Computer/img_median.csv", "a") as f:
+        #Save raw image to file
+        for n in range(num_exposures):
+            request = self.picam2.capture_request()
+            if filepath is None:
+                img_filepath = f"{capture_dir}/e-{metadata['ExposureTime']}({exposure_seconds}s)_g{metadata['AnalogueGain']}_Temp{metadata['SensorTemperature']}_{n}.tiff"
+            else:
+                img_filepath = filepath
+            img_array = request.make_array(name="raw").view(np.uint16)
+            imwrite(img_filepath, img_array)
+            print(f"array info. flags({img_array.flags}), shape({img_array.shape}), size({img_array.size}), itemsize({img_array.itemsize}), nbytes({img_array.nbytes})")
+            request.release()
+            print(f"Took picture at: Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}")
+
+            # Save data as csv for auto exposure script
+            max_value = 65520.0
+            max_image_value = np.max(img_array)
+            count = np.sum(img_array == max_value)
+            img_median = np.median(img_array)
+            with open("/home/pi/images/calibration_data/img_median.csv", "a") as f:
                 writer = csv.writer(f)
-                writer.writerow([exposure_seconds, median])	
+                writer.writerow([exposure_seconds, img_median, max_image_value, count])
 
-	#Function to take images at a range exposure and gain values
-	def collect_calibration_data(self, exposure_values, gain_values, num_exposures):
-		for exposure in exposure_values:
-			for gain in gain_values:
-				self.run_exposures(exposure, gain, num_exposures)
+            plt.figure(figsize=(10, 6))
+            plt.hist(img_array.ravel(), bins=256)
+            plt.xlabel("Pixel value")
+            plt.ylabel("Count")
+            plt.title(f"Histogram — {exposure_seconds}s exposure")
+            plt.savefig(f"/home/pi/images/calibration_data/hist_{exposure_seconds}s_{gain}.png", dpi=150)
+            plt.close()
+
+    #Function to take images at a range exposure and gain values
+    def collect_calibration_data(self, exposure_values, gain_values, num_exposures, filepath=None):
+        for exposure in exposure_values:
+            for gain in gain_values:
+                self.run_exposures(exposure, gain, num_exposures, None)
