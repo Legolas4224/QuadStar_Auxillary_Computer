@@ -102,9 +102,10 @@ def get_stats(image_path) :
     
 
     image = fits.getdata(image_path)
+    np_median = np.median(image)
     mean, median, std = sigma_clipped_stats(image)
     maximum, minimum = np.max(image), np.min(image)
-    background = median
+    background = np_median
     finder = DAOStarFinder(
         threshold=5 * std,
         fwhm=3.0,

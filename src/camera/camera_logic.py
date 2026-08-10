@@ -122,7 +122,7 @@ class CameraLogic:
             median = np.median(img_array)
             print(median)
             stats_list = [exposure_seconds, median]
-            with open("data.csv", mode="a", newline="", encoding="utf-8") as file:
+            with open("/home/pi/QuadStar_Auxillary_Computer/img_median.csv", mode="a", newline="", encoding="utf-8") as file:
                 writer = csv.writer(file)
                 writer.writerow(stats_list)
             
