@@ -13,13 +13,13 @@ def read_sensor_data():
     # Read the gyroscope values
     gyroscope_data = mpu6050.get_gyro_data()
 
-    return accelerometer_data, gyroscope_data, temperature
+    return accelerometer_data, gyroscope_data
 
 # Start a while loop to continuously read the sensor data
 while True:
 
     # Read the sensor data
-    acel, gyro, temperature = read_sensor_data()
+    acel, gyro = read_sensor_data()
 
     g = np.sqrt(acel["x"]**2 + acel["y"]**2 + acel["z"]**2)
     mag = np.sqrt(gyro["x"]**2 + gyro["y"]**2 + gyro["z"]**2)

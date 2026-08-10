@@ -3,10 +3,7 @@
 PROG_DIR="/home/pi/QuadStar_Auxillary_Computer"
 CAM2_DIR="/home/pi/images/wide"
 
-
-CAMERA_NUMBER=0
-
-# DEFAULT_FLAGS="--camera 1 --immediate --autofocus-mode manual --lens-position 0.0 --gain 1.0 -e rgb -o $(date '+%Y%m%d_%H%M%S').jpg --raw --denoise off"
+CAMERA_NUMBER=0 # normally will be 1 but can be 0 for testing
 
 run_exposure() {
 	local n=${2-1}
