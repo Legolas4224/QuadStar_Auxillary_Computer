@@ -41,7 +41,7 @@ def load_raw(path) :
 
         print("Image dimensions:", raw_data.shape)
 
-def plot_histogram(img) :
+def plot_histogram(img, plotname) :
     #image = fits.getdata(image_path)
     img_array = np.array(img)
 
@@ -78,7 +78,7 @@ def plot_histogram(img) :
     # 3. Display the plot
     plt.tight_layout()
     now = datetime.now()
-    plt.savefig(f"plots/{exp}s_{now.day}-{now.month}-{now.hour}:{now.minute}:{now.second}.png",)
+    plt.savefig(f"plots/{plotname}_{now.day}-{now.month}-{now.hour}:{now.minute}:{now.second}.png",)
 
     #plt.hist(image.ravel(), bins=1000)
     #plt.xlabel("Pixel value")
@@ -86,11 +86,11 @@ def plot_histogram(img) :
     #plt.title("Image Histogram")
     #plt.show()
 
-def main() :
+def main(exp) :
     path = "/home/thomas/Documents/Code/QuadStar/Images/20260810_183233_e-30.0_g-1.0_n-5.solve/Ex6999327_(30.0s)_Gain1.0_Temp13.0_1786350760.9048686.tiff"
 
 
-    exp = float(input("Exp time (s): "))
+    #exp = float(input("Exp time (s): "))
     if exp == 0.5 :
         path = "/home/thomas/Documents/Code/QuadStar/Images/20260810_182334_e-0.5_g-1.0_n-5.solve/Ex499991_(0.5s)_Gain1.0_Temp14.0_1786350217.5650754.tiff"
     elif exp == 3 :
@@ -101,8 +101,11 @@ def main() :
         path = "/home/thomas/Documents/Code/QuadStar/Images/ceiling_tiffs/Ex999982_(1.0s)_Gain1.0_Temp15.0_1785924314.6876094.tiff"
 
     print("loading image of exp time:", exp, "s")
+
     image = load_tiff(path)
-    plot_histogram(image)
+
+    plotname = "30s"
+    plot_histogram(image, plotname)
 
 if __name__ == "__main__" :
-    main()
+    main(30)
