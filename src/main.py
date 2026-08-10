@@ -11,7 +11,7 @@ def main():
 	cam.close()
 
 def main_manual(exposure_length, gain, num_frames):
-	cam = CameraLogic(manual=True)
+	cam = CameraLogic(manual=True, exposure=exposure_length)
 	print(f"{cam.supported_controls()}\n\n")
 	#cam.collect_calibration_data()
 	print("\n================ Image Capture Running ==================")
