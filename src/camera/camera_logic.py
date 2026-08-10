@@ -31,7 +31,7 @@ class CameraLogic:
             raw={"format": "SRGGB12", "size": dimensions},
             sensor={"output_size": dimensions, "bit_depth": 12},
             controls={
-                "FrameDurationLimits": (110, 30_000_000),
+                "FrameDurationLimits": (110, 90_000_000),
                 "AeEnable": False,
                 "AwbEnable": False,
                 "ColourGains": (1.0, 1.0),
@@ -107,7 +107,8 @@ class CameraLogic:
        
             t2 = time.time()
             img_array = request.make_array("raw").view(np.uint16)  
-            
+            img_array = img_array[:, :-8]
+
             t3 = time.time()
             request.release()
 
