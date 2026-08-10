@@ -6,12 +6,14 @@ CAM2_DIR="/home/pi/images/wide"
 CAMERA_NUMBER=0 # normally will be 1 but can be 0 for testing
 
 run_exposure() {
+	local exposure_len_secs="$1s"
 	local n=${2-1}
-	local folder="$CAM2_DIR/$(date '+%Y%m%d_%H%M%S')_e-$1_g-1.0_n-$n"
+	local folder="$CAM2_DIR/$(date '+%Y%m%d_%H%M%S')_e-"$exposure_len_secs"_g-1.0_n-$n"
+	echo "exp: $exposure_len_secs, num: $n, folder: $folder"  
 	mkdir -p $folder
 	for i in $(seq "$n")
 	do
-		local flags="--camera $CAMERA_NUMBER --immediate --autofocus-mode manual --lens-position 0.0 --gain 1.0 -e rgb -o $folder/wide_$i_$(date '+%s').dng --raw --denoise off"
+		local flags="--camera $CAMERA_NUMBER --zsl --autofocus-mode manual --shutter $exposure_len_secs --lens-position 0.0 --gain 1.0 --awbgains 1,1  -o $folder/wide_$i_$(date '+%s').dng  --immediate --mode 4608:2592:10 "
 		echo "rpicam-still $flags"
 		rpicam-still $flags
 	done
@@ -20,4 +22,4 @@ run_exposure() {
 
 mkdir -p $CAM2_DIR
 
-run_exposure 0.5 5
+run_exposure 7 5
