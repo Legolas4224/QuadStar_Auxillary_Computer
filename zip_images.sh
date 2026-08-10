@@ -15,7 +15,7 @@
 
 set -euo pipefail
 
-TARGET_DIR="/home/pi/images/QuadStar"
+TARGET_DIR="${1:-/home/pi/images/QuadStar}"
 
 # --- Sanity checks -----------------------------------------------------
 

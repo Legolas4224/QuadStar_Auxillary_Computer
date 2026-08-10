@@ -1,15 +1,26 @@
 #!/bin/bash
 
 PROG_DIR="/home/pi/QuadStar_Auxillary_Computer"
+CAM2_DIR="/home/pi/images/wide"
+
+
+CAMERA_NUMBER=0
 
 # DEFAULT_FLAGS="--camera 1 --immediate --autofocus-mode manual --lens-position 0.0 --gain 1.0 -e rgb -o $(date '+%Y%m%d_%H%M%S').jpg --raw --denoise off"
 
 run_exposure() {
-	local flags="--camera 1 --immediate --autofocus-mode manual --lens-position 0.0 --gain 1.0 -e rgb -o $PROG_DIR/$(date '+%Y%m%d_%H%M%S')_e-$1_g-1.0_n-${2-1}.jpg --raw --denoise off"
-	echo "rpicam-still $flags"
+	local n=${2-1}
+	local folder="$CAM2_DIR/$(date '+%Y%m%d_%H%M%S')_e-$1_g-1.0_n-$n"
+	mkdir -p $folder
+	for i in $(seq "$n")
+	do
+		local flags="--camera $CAMERA_NUMBER --immediate --autofocus-mode manual --lens-position 0.0 --gain 1.0 -e rgb -o $folder/wide_$i_$(date '+%s').dng --raw --denoise off"
+		echo "rpicam-still $flags"
+		rpicam-still $flags
+	done
+	mv "$folder" "$folder.done"
 }
 
-run_exposure 0.5
+mkdir -p $CAM2_DIR
 
-# echo "rpicam-still $DEFAULT_FLAGS --shutter 0.5"
-# rpicam-still $DEFAULT_FLAGS --shutter 0.5  
+run_exposure 0.5 5
