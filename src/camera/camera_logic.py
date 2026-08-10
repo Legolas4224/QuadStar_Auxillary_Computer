@@ -2,170 +2,196 @@ from picamera2 import Picamera2, Preview
 import numpy as np
 import time
 import os
+import subprocess
 from datetime import datetime
 from tifffile import imwrite
+import csv
 
 class CameraLogic:
-	#Initialise camera
-	def __init__(self, manual=False, config=None):
-		self.picam2 = Picamera2()
-		#This configuration is for previewing the camera
-		self.preview_config = self.picam2.create_preview_configuration()
-		#This configuration is for taking images
-		self.still_config = self.picam2.create_still_configuration(
-			raw={"format": "SRGGB12", "size": (4056, 3040)},
-			sensor={"output_size": (4056, 3040), "bit_depth": 12},
-			controls={"FrameDurationLimits": (110,600000000)},
-		)
-		self.picam2.configure(self.preview_config)
-		self.preview_started = False
+    # Initialise camera
+    def __init__(self, manual=False, config=None):
+        try:
+            self.picam2 = Picamera2()
+        except IndexError as idx_err:
+            subprocess.run(["vcgencmd", "get_camera"])
+            self.picam2 = Picamera2()
 
-	#Start camera
-	def start(self):
-		self.picam2.start()
+        # This configuration is for previewing the camera
+        self.preview_config = self.picam2.create_preview_configuration()
+        # This configuration is for taking images
+        self.still_config = self.picam2.create_still_configuration(
+            raw={"format": "SRGGB12", "size": (4056, 3040)},
+            sensor={"output_size": (4056, 3040), "bit_depth": 12},
+            controls={"FrameDurationLimits": (110, 600000000)},
+        )
+        self.picam2.configure(self.preview_config)
+        self.preview_started = False
 
-	#Stop and close camera
-	def close(self):
-		self.picam2.stop()
-		self.picam2.close()
+    # Start camera
+    def start(self):
+        self.picam2.start()
 
-	#Display camera view
-	def start_preview(self, preview_type=Preview.DRM):
-		self.picam2.start_preview(preview_type)
-		self.preview_started = True
-		self.picam2.start()
+    # Stop and close camera
+    def close(self):
+        self.picam2.stop()
+        self.picam2.close()
 
-	#Stop camera preview
-	def stop_preview(self):
-		if self.preview_started:
-			self.picam2.stop_preview()
+    # Display camera view
+    def start_preview(self, preview_type=Preview.DRM):
+        self.picam2.start_preview(preview_type)
+        self.preview_started = True
+        self.picam2.start()
 
-	#Return the camera parameters for calibrating
-	def supported_controls(self):
-		print(self.picam2.camera_controls)
+    # Stop camera preview
+    def stop_preview(self):
+        if self.preview_started:
+            self.picam2.stop_preview()
 
-	#Set the camera exposure time and gain values
-	def set_brightness(self, exposure, gain):
-		self.picam2.set_controls({"ExposureTime": exposure, "AnalogueGain": gain})
+    # Return the camera parameters for calibrating
+    def supported_controls(self):
+        print(self.picam2.camera_controls)
 
-	#Get the camera metadata
-	def get_metadata(self):
-		return self.picam2.capture_metadata()
+    # Set the camera exposure time and gain values
+    def set_brightness(self, exposure, gain):
+        self.picam2.set_controls({"ExposureTime": exposure, "AnalogueGain": gain})
 
-	#Capture the current image
-	#Return an array with RGB channels
-	def capture_rgb(self):
-		return self.picam2.capture_array()[:,:,:3]
+    # Get the camera metadata
+    def get_metadata(self):
+        return self.picam2.capture_metadata()
 
-	def run_exposures(self, exposure_seconds, gain, num_exposures):
-			self.picam2.configure(self.still_config)
-			self.start()
-			self.picam2.set_controls({"AeEnable": False})
-			gain_value = gain  # [1.0, 2.0, 4.0]
-			#exposure_values = [250,500,1000]   # [0.11, 0.5, 1, 5, 10, 50, 100, 500, 1000]	#ms
-			#exposure_values = [ex * 10**3 for ex in exposure_values]
-			exposure_value = exposure_seconds * 10**6
-			
-			self.set_brightness(int(exposure_value), gain_value)
+    # Capture the current image
+    # Return an array with RGB channels
+    def capture_rgb(self):
+        return self.picam2.capture_array()[:, :, :3]
 
-			capture_dir = f"/home/pi/images/QuadStar/{datetime.now():%Y%m%d_%H%M%S}_e-{exposure_seconds}_g-{gain}_n-{num_exposures}"
-			os.makedirs(capture_dir, exist_ok=True)
+    def run_exposures(self, exposure_seconds, gain, num_exposures):
+        self.picam2.configure(self.still_config)
+        self.start()
+        self.picam2.set_controls({"AeEnable": False})
+        gain_value = gain  # [1.0, 2.0, 4.0]
+        # exposure_values = [250,500,1000]   # [0.11, 0.5, 1, 5, 10, 50, 100, 500, 1000]	#ms
+        # exposure_values = [ex * 10**3 for ex in exposure_values]
+        exposure_value = exposure_seconds * 10**6
 
-			#Loop until camera updates new settings
-			timeout = time.time() + 2.0
-			metadata = self.get_metadata()
-			while time.time() < timeout:
-				metadata = self.get_metadata()
-				if (abs(metadata["ExposureTime"] - exposure_value) < 100) and (abs(metadata["AnalogueGain"] - gain_value) < 0.1):
-					break
+        self.set_brightness(int(exposure_value), gain_value)
 
-			#Save raw image to file
-			for _ in range(num_exposures):
-				request = self.picam2.capture_request()
-				img_filepath = f"{capture_dir}/Ex{metadata['ExposureTime']}_({exposure_seconds}s)_Gain{metadata['AnalogueGain']}_Temp{metadata['SensorTemperature']}_{time.time()}.dng"
-				# request.save_dng(name="raw", file_output=img_filepath)
-				img_array = request.make_array(name="raw").view(np.uint16)
-				imwrite(img_filepath, img_array)
-				print(f"array info. flags({img_array.flags}), shape({img_array.shape}), size({img_array.size}), itemsize({img_array.itemsize}), nbytes({img_array.nbytes})")
-				request.release()
-				print(f"Took picture at: Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}")
+        capture_dir = f"/home/pi/images/QuadStar/{datetime.now():%Y%m%d_%H%M%S}_e-{exposure_seconds}_g-{gain}_n-{num_exposures}.solve"
+        os.makedirs(capture_dir, exist_ok=True)
 
-		
-	def collect_calibration_data(self):
-		self.picam2.configure(self.still_config)
-		self.start()
-		self.picam2.set_controls({"AeEnable": False})
-		gain_values = [1.0]  # [1.0, 2.0, 4.0]
-		exposure_values = [250,500,1000]   # [0.11, 0.5, 1, 5, 10, 50, 100, 500, 1000]	#ms
-		exposure_values = [ex * 10**3 for ex in exposure_values]
+        # Loop until camera updates new settings
+        timeout = time.time() + 2.0
+        metadata = self.get_metadata()
+        while time.time() < timeout:
+            metadata = self.get_metadata()
+            if (abs(metadata["ExposureTime"] - exposure_value) < 100) and (
+                abs(metadata["AnalogueGain"] - gain_value) < 0.1
+            ):
+                break
 
-		for exposure in exposure_values:
-			for gain in gain_values:
-				self.set_brightness(int(exposure), gain)
+        # Save raw image to file
+        for _ in range(num_exposures):
+            request = self.picam2.capture_request()
+            img_filepath = f"{capture_dir}/Ex{metadata['ExposureTime']}_({exposure_seconds}s)_Gain{metadata['AnalogueGain']}_Temp{metadata['SensorTemperature']}_{time.time()}.tiff"
+            # request.save_dng(name="raw", file_output=img_filepath)
+            img_array = request.make_array(name="raw").view(np.uint16)
+            imwrite(img_filepath, img_array)
+            print(
+                f"array info. flags({img_array.flags}), shape({img_array.shape}), size({img_array.size}), itemsize({img_array.itemsize}), nbytes({img_array.nbytes})"
+            )
+            request.release()
+            print(
+                f"Took picture at: Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}"
+            )
+            median = np.median(img_array)
+            with open("/home/pi/QuadStar_Auxillary_Computer/img_median.csv", "a") as f:
+                writer = csv.writer(f)
+                writer.writerow([exposure_seconds, median])
 
-				#Loop until camera updates new settings
-				timeout = time.time() + 2.0
-				metadata = self.get_metadata()
-				while time.time() < timeout:
-					metadata = self.get_metadata()
-					if (abs(metadata["ExposureTime"] - exposure) < 100) and (abs(metadata["AnalogueGain"] - gain) < 0.1):
-						break
+    def collect_calibration_data(self):
+        self.picam2.configure(self.still_config)
+        self.start()
+        self.picam2.set_controls({"AeEnable": False})
+        gain_values = [1.0]  # [1.0, 2.0, 4.0]
+        exposure_values = [
+            250,
+            500,
+            1000,
+        ]  # [0.11, 0.5, 1, 5, 10, 50, 100, 500, 1000]	#ms
+        exposure_values = [ex * 10**3 for ex in exposure_values]
 
-				#Save raw image to file
-				for _ in range(2):
-					request = self.picam2.capture_request()
-					request.save_dng(f"./data/Ex:{metadata['ExposureTime']}_Gain:{metadata['AnalogueGain']}_Temp:{metadata['SensorTemperature']}_{time.time()}.dng")
-					request.release()
-					print(f"Took picture at: Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}")
+        for exposure in exposure_values:
+            for gain in gain_values:
+                self.set_brightness(int(exposure), gain)
 
+                # Loop until camera updates new settings
+                timeout = time.time() + 2.0
+                metadata = self.get_metadata()
+                while time.time() < timeout:
+                    metadata = self.get_metadata()
+                    if (abs(metadata["ExposureTime"] - exposure) < 100) and (
+                        abs(metadata["AnalogueGain"] - gain) < 0.1
+                    ):
+                        break
 
-	#Simple function to find the exposure time and gain to reach the target brightness
-	#Notes: This works but it converges to the target brightness very slowly, especially if it is overexposed.
-	#Next steps: - Try a calibration function, sweep through a range of exposure and gain to quickly get the correct setting
-	#            - Or find a math function that converges faster
-	#			 - Try a different method of auto exposure
-	def auto_exposure(self, current, target, plate_solving):
-		min_exposure, max_exposure = 1000, 1000000
-		min_gain, max_gain = 1.0, 16.0
+                # Save raw image to file
+                for _ in range(2):
+                    request = self.picam2.capture_request()
+                    request.save_dng(
+                        f"./data/Ex:{metadata['ExposureTime']}_Gain:{metadata['AnalogueGain']}_Temp:{metadata['SensorTemperature']}_{time.time()}.dng"
+                    )
+                    request.release()
+                    print(
+                        f"Took picture at: Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}"
+                    )
 
-		frame = self.capture()
-		metadata = self.get_metadata()
-		exposure, gain = metadata["ExposureTime"], metadata["AnalogueGain"]
+    # Simple function to find the exposure time and gain to reach the target brightness
+    # Notes: This works but it converges to the target brightness very slowly, especially if it is overexposed.
+    # Next steps: - Try a calibration function, sweep through a range of exposure and gain to quickly get the correct setting
+    #            - Or find a math function that converges faster
+    # 			 - Try a different method of auto exposure
+    def auto_exposure(self, current, target, plate_solving):
+        min_exposure, max_exposure = 1000, 1000000
+        min_gain, max_gain = 1.0, 16.0
 
-		if plate_solving:
-			while current != target:
-				scale = target / current
-				if gain < max_gain:
-					gain *= scale
-				elif exposure < max_exposure:
-					exposure *= scale
-				gain = max_gain if gain > max_gain else gain
-				exposure = max_exposure if exposure > max_exposure else exposure
+        frame = self.capture()
+        metadata = self.get_metadata()
+        exposure, gain = metadata["ExposureTime"], metadata["AnalogueGain"]
 
-				self.set_brightness(int(exposure), gain)
-				for _ in range(5):
-					self.capture()
+        if plate_solving:
+            while current != target:
+                scale = target / current
+                if gain < max_gain:
+                    gain *= scale
+                elif exposure < max_exposure:
+                    exposure *= scale
+                gain = max_gain if gain > max_gain else gain
+                exposure = max_exposure if exposure > max_exposure else exposure
 
-				print(f"Exposure: {exposure}, Gain: {gain}, Brightness: {current}")
+                self.set_brightness(int(exposure), gain)
+                for _ in range(5):
+                    self.capture()
 
-				frame = self.capture()
-				current = np.percentile(frame, 99)
+                print(f"Exposure: {exposure}, Gain: {gain}, Brightness: {current}")
 
-	def ae_plate_solving_mode(self):
-		self.picam2.set_controls({"AeEnable": False})
+                frame = self.capture()
+                current = np.percentile(frame, 99)
 
-		#This set controls is just for testing the mode
-		self.set_brightness(1000, 1.0)
-		for _ in range(5):
-			self.capture()
+    def ae_plate_solving_mode(self):
+        self.picam2.set_controls({"AeEnable": False})
 
-		target_brightness = 253
+        # This set controls is just for testing the mode
+        self.set_brightness(1000, 1.0)
+        for _ in range(5):
+            self.capture()
 
-		print(self.get_metadat())
+        target_brightness = 253
 
-		while True:
-			frame = self.capture()
-			current_brightness = np.percentile(frame, 99)
-			if current_brightness != target_brightness:
-				self.auto_exposure(current_brightness, target_brightness, plate_solving=True)
+        print(self.get_metadat())
 
+        while True:
+            frame = self.capture()
+            current_brightness = np.percentile(frame, 99)
+            if current_brightness != target_brightness:
+                self.auto_exposure(
+                    current_brightness, target_brightness, plate_solving=True
+                )
