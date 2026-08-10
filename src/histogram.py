@@ -83,8 +83,10 @@ def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False) :
     now = datetime.now()
     import os
     os.makedirs("plots", exist_ok=True)
-    plt.savefig(f"plots/Histogram-{plotname}_{now.day}-{now.month}-{now.hour}:{now.minute}:{now.second}.png",)
-
+    plot_path = f"plots/Image-{plotname}_{now.day}-{now.month}-{now.hour}:{now.minute}:{now.second}",
+    plt.savefig(plot_path+".png")
+    return plot_path
+    
     #plt.hist(image.ravel(), bins=1000)
     #plt.xlabel("Pixel value")
     #plt.ylabel("Number of pixels")
@@ -96,7 +98,10 @@ def capture_to_histo(exptime) :
     image_path = capture(exptime, 1.0, 1)
     files = sorted(glob.glob(f"{image_path}/*"))
     image = load_tiff(files[0])
-    plot_histogram(image, exptime, xlog=False, ylog=False)
+    plot_path = plot_histogram(image, exptime, xlog=False, ylog=False)
+    import shutil
+    shutil.copy(image_path, plot_path+".tiff")
+    print("Image file and histogram copied to plots dir")
 
 
 def main(exp) :
