@@ -3,7 +3,7 @@ echo "Starting main.py"
 
 # Capture Calibration Frames
 
-
+python src/calibrate
 
 
 

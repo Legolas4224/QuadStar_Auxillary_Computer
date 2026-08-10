@@ -26,12 +26,22 @@ def load(raw_path) :
 exp_time = 0.5
 
 capture(exp_time, 1.0, 10)
-images = load(raw_path)
-clipped = sigma_clip(images, sigma=sigma, axis=0, maxiters=3)
+image = load(raw_path)
+
+
+
+
+#clipped = sigma_clip(images, sigma=sigma, axis=0, maxiters=3)
 # Mean of non-rejected values at each pixel position
-stacked = np.ma.mean(clipped, axis=0).data
+#stacked = np.ma.mean(clipped, axis=0).data
 
 
-light_power = input("Enter light power: ")
+
+
+
+
+
+
+#light_power = input("Enter light power: ")
 
 
