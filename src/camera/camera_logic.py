@@ -23,13 +23,13 @@ class CameraLogic:
         else:
             exposure_microsecs = int(500_000) # default to 0.5s
 
-        dimensions_wide = (4608, 2592)
         dimensions = (4056, 3040)
+        dimensions_wide = (4608, 2592)
 
         self.still_config = self.picam2.create_still_configuration(
-            main={"size": dimensions_wide},
-            raw={"format": "SRGGB10", "size": dimensions_wide},
-            sensor={"output_size": dimensions_wide, "bit_depth": 10},
+            main={"size": dimensions},
+            raw={"format": "SRGGB12", "size": dimensions},
+            sensor={"output_size": dimensions, "bit_depth": 12},
             controls={
                 "FrameDurationLimits": (110, 7_000_000),
                 "AeEnable": False,
