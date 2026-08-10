@@ -124,6 +124,7 @@ class CameraLogic:
          
 
         self.close()
+        return capture_dir
 
     def collect_calibration_data(self):
         self.picam2.configure(self.still_config)
