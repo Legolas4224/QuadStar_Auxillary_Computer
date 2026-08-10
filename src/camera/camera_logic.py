@@ -31,11 +31,11 @@ class CameraLogic:
             raw={"format": "SRGGB12", "size": dimensions},
             sensor={"output_size": dimensions, "bit_depth": 12},
             controls={
-                "FrameDurationLimits": (110, 7_000_000),
+                "FrameDurationLimits": (110, 30_000_000),
                 "AeEnable": False,
                 "AwbEnable": False,
                 "ColourGains": (1.0, 1.0),
-                "AfMode": controls.AfModeEnum.Manual,
+                #"AfMode": controls.AfModeEnum.Manual,
                 "ExposureTime": exposure_microsecs,
                 "AnalogueGain": 1.0,
             },
@@ -118,6 +118,7 @@ class CameraLogic:
             median = np.median(img_array)
             with open("/home/pi/QuadStar_Auxillary_Computer/img_median.csv", "a") as f:
                 writer = csv.writer(f)
+                meta_exposure_len = metadata["ExposureTime"] / 1_000_000.0
                 writer.writerow([exposure_seconds, median])
 
             print(f"req={t1-t0}, meta={t2-t1}, cap={t3-t2}, rel={t4-t3}, write={t5-t4}")

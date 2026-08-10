@@ -41,7 +41,7 @@ def load_raw(path) :
 
         print("Image dimensions:", raw_data.shape)
 
-def plot_histogram(img, plotname, xlog=True, ylog=False, clip=False) :
+def plot_histogram(img, plotname, xlog=False, ylog=True, clip=False) :
     #image = fits.getdata(image_path)
     img_array = np.array(img)
 
@@ -73,7 +73,7 @@ def plot_histogram(img, plotname, xlog=True, ylog=False, clip=False) :
     plt.xlabel("Pixel Intensity")
     plt.ylabel("Frequency")
     if xlog :
-        plt.xlog("log")
+        plt.xscale("log")
     if ylog :
         plt.yscale("log")
     
@@ -81,6 +81,8 @@ def plot_histogram(img, plotname, xlog=True, ylog=False, clip=False) :
     # 3. Display the plot
     plt.tight_layout()
     now = datetime.now()
+    import os
+    os.makedirs("plots", exist_ok=True)
     plt.savefig(f"plots/Histogram-{plotname}_{now.day}-{now.month}-{now.hour}:{now.minute}:{now.second}.png",)
 
     #plt.hist(image.ravel(), bins=1000)
@@ -90,9 +92,11 @@ def plot_histogram(img, plotname, xlog=True, ylog=False, clip=False) :
     #plt.show()
 
 def capture_to_histo(exptime) :
+    import glob
     image_path = capture(exptime, 1.0, 1)
-    image = load_tiff(image_path)
-    plot_histogram(image, exptime, xlog=True, ylog=False)
+    files = sorted(glob.glob(f"{image_path}/*"))
+    image = load_tiff(files[0])
+    plot_histogram(image, exptime, xlog=False, ylog=True)
 
 
 def main(exp) :
