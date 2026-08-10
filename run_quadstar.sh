@@ -49,12 +49,18 @@ worker_loop() {
 }
 
 capture_interval=180
+wide_capture_interval=180
+
 zip_interval=60
 solve_interval=120
 
 worker_loop "$capture_interval" capture ./capture.sh &
-worker_loop "$zip_interval" zip_images ./zip_images.sh &
+worker_loop "$wide_capture_interval" wide_capture ./wide_capture.sh &
+
 worker_loop "$solve_interval" solve ./solve.sh &
+
+worker_loop "$zip_interval" zip_images ./zip_images.sh &
+worker_loop "$zip_interval" zip_wide_images ./zip_images.sh /home/pi/images/wide &
 
 # wait here forever so all children are kept alive
 wait 
