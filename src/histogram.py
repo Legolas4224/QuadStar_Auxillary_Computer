@@ -41,7 +41,7 @@ def load_raw(path) :
 
         print("Image dimensions:", raw_data.shape)
 
-def plot_histogram(img, plotname, xlog=False, ylog=True, clip=False) :
+def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False) :
     #image = fits.getdata(image_path)
     img_array = np.array(img)
 
@@ -96,7 +96,7 @@ def capture_to_histo(exptime) :
     image_path = capture(exptime, 1.0, 1)
     files = sorted(glob.glob(f"{image_path}/*"))
     image = load_tiff(files[0])
-    plot_histogram(image, exptime, xlog=False, ylog=True)
+    plot_histogram(image, exptime, xlog=False, ylog=False)
 
 
 def main(exp) :
@@ -122,4 +122,6 @@ def main(exp) :
 
 if __name__ == "__main__" :
     #main(30)
-    capture_to_histo(1)
+    import sys
+    exp = float(sys.argv[1])
+    capture_to_histo(exp)
