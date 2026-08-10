@@ -2,31 +2,48 @@ import numpy as np
 import csv
 import matplotlib.pyplot as plt
 from main import main_manual as capture
+from histogram import capture_to_histo
 
 # goal: plot image stats vs exposure time
 # find absolute sensor response to light power
 # calibrate images - darks and flats
 
-
-# GLOBAL PARAMS
-raw_path = "/home/pi/QuadStar_Auxillary_Computer/data/"     #"test_images/Darks/0.5s"
-#master_dark_output_path = "test_images/Darks/0.5s"
-filetype = ".dng"
-
-def load(raw_path) :
-    # ======== Load Images ==========
-    files = sorted(glob.glob(f"{raw_path}*.{filetype}"))
-    print(f"Found {len(files)} frames")
-
-    if not files:
-        raise RuntimeError("No image files found.")
-    return files
+capture_to_histo(1)
 
 
-exp_time = 0.5
 
-capture(exp_time, 1.0, 10)
-image = load(raw_path)
+
+
+
+
+
+
+
+
+
+
+
+
+
+## GLOBAL PARAMS
+#raw_path = "/home/pi/QuadStar_Auxillary_Computer/data/"     #"test_images/Darks/0.5s"
+##master_dark_output_path = "test_images/Darks/0.5s"
+#filetype = ".dng"
+#
+#def load(raw_path) :
+#    # ======== Load Images ==========
+#    files = sorted(glob.glob(f"{raw_path}*.{filetype}"))
+#    print(f"Found {len(files)} frames")
+#
+#    if not files:
+#        raise RuntimeError("No image files found.")
+#    return files
+#
+#
+#exp_time = 0.5
+#
+#capture(exp_time, 1.0, 10)
+#image = load(raw_path)
 
 
 

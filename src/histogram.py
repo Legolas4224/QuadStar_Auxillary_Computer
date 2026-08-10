@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 import rawpy
 from datetime import datetime
-
+from main import main_manual as capture
 
 def load_tiff(path) :
     from PIL import Image
@@ -41,7 +41,7 @@ def load_raw(path) :
 
         print("Image dimensions:", raw_data.shape)
 
-def plot_histogram(img, plotname) :
+def plot_histogram(img, plotname, xlog=True, ylog=False, clip=False) :
     #image = fits.getdata(image_path)
     img_array = np.array(img)
 
@@ -55,9 +55,9 @@ def plot_histogram(img, plotname) :
     brightness_threshold = np.percentile(img_array, 99)
     print("99% of pixels below: ", brightness_threshold)
 
-    clip_plot = False
+    clip = False
 
-    if clip_plot :
+    if clip:
 
         # Find actual min and max values present in your data
         data_min = np.min(img_array)
@@ -72,19 +72,28 @@ def plot_histogram(img, plotname) :
     plt.title("Histogram")
     plt.xlabel("Pixel Intensity")
     plt.ylabel("Frequency")
-    plt.yscale("log")
-    #plt.xscale("log")
+    if xlog :
+        plt.xlog("log")
+    if ylog :
+        plt.yscale("log")
+    
 
     # 3. Display the plot
     plt.tight_layout()
     now = datetime.now()
-    plt.savefig(f"plots/{plotname}_{now.day}-{now.month}-{now.hour}:{now.minute}:{now.second}.png",)
+    plt.savefig(f"plots/Histogram-{plotname}_{now.day}-{now.month}-{now.hour}:{now.minute}:{now.second}.png",)
 
     #plt.hist(image.ravel(), bins=1000)
     #plt.xlabel("Pixel value")
     #plt.ylabel("Number of pixels")
     #plt.title("Image Histogram")
     #plt.show()
+
+def capture_to_histo(exptime) :
+    image_path = capture(exptime, 1.0, 1)
+    image = load_tiff(image_path)
+    plot_histogram(image, exptime, xlog=True, ylog=False)
+
 
 def main(exp) :
     path = "/home/thomas/Documents/Code/QuadStar/Images/20260810_183233_e-30.0_g-1.0_n-5.solve/Ex6999327_(30.0s)_Gain1.0_Temp13.0_1786350760.9048686.tiff"
@@ -108,4 +117,5 @@ def main(exp) :
     plot_histogram(image, plotname)
 
 if __name__ == "__main__" :
-    main(30)
+    #main(30)
+    capture_to_histo(1)
