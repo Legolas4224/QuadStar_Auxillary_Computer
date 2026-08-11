@@ -5,7 +5,7 @@ from PIL import Image
 import rawpy
 from datetime import datetime
 import tiffile
-#from main import main_manual as capture
+from main import main_manual as capture
 
 # ========== GLOBAL PARAMS ==================
 focal_length = 5.0  # mm
@@ -136,7 +136,7 @@ def capture_to_histo(exptime) :
     plot_path = plot_histogram(image, exptime, xlog=False, ylog=True)
     import shutil
     print("plot path", plot_path)
-    shutil.copy(image_path, f"{plot_path}.tiff")
+    shutil.copy(image_path, f"{plot_path}_full.tiff")
     print("Image file and histogram copied to plots dir")
 
 def save_tiff(img_array, path) :
@@ -166,8 +166,8 @@ def main(exp) :
     plot_histogram(image, plotname, ROI=(100,100))
 
 if __name__ == "__main__" :
-    main(30)
-    #import sys
-    #exp = float(sys.argv[1])
-    #capture_to_histo(exp)
+    #main(30)
+    import sys
+    exp = float(sys.argv[1])
+    capture_to_histo(exp)
     #plot_histogram()
