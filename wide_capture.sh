@@ -13,6 +13,10 @@ clean_up() {
 }
 trap clean_up INT TERM KILL
 
+LONG_SENSOR_MODE="4056:3040:12"
+WIDE_SENSOR_MODE="4608:2592:10"
+
+
 run_exposure() {
 	local exposure_len_secs="$1s"
 	local n=${2-1}
@@ -21,7 +25,7 @@ run_exposure() {
 	mkdir -p $folder
 	for i in $(seq "$n")
 	do
-		local flags="--camera $CAMERA_NUMBER --zsl --autofocus-mode manual --shutter $exposure_len_secs --lens-position 0.0 --gain 1.0 --awbgains 1,1  -o $folder/wide_$i_$(date '+%s').dng  --immediate --mode 4608:2592:10 "
+		local flags="--camera $CAMERA_NUMBER --zsl --autofocus-mode manual --shutter $exposure_len_secs --lens-position 0.0 --gain 1.0 --awbgains 1,1  -o $folder/wide_"$i"_$(date '+%s').dng  --immediate --mode $LONG_SENSOR_MODE "
 		echo "rpicam-still $flags"
 		rpicam-still $flags
 	done
@@ -30,4 +34,9 @@ run_exposure() {
 
 mkdir -p $CAM2_DIR
 
-run_exposure 7 5
+run_exposure 0.25 10
+run_exposure 0.5 10
+run_exposure 1 5
+run_exposure 2 5
+run_exposure 4 5
+
