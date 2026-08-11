@@ -88,6 +88,8 @@ class CameraLogic:
         if changed:
             self.picam2.configure(self.still_config)
 
+        time.sleep(0.5)
+
         print(self.still_config)
         
         capture_dir = f"/home/pi/images/QuadStar/{datetime.now():%Y%m%d_%H%M%S}_e-{exposure_seconds}_g-{gain}_n-{num_exposures}.solve"
@@ -98,62 +100,25 @@ class CameraLogic:
 
         # Save raw image to file
         for _ in range(num_exposures):
-            t0 = time.time()
             print(f"taking image, exposure: {exposure_value}") 
             request = self.picam2.capture_request()
 
-            t1 = time.time()
             metadata= request.get_metadata()
             print(f"metadata: {metadata}")
             img_filepath = f"{capture_dir}/Ex{metadata['ExposureTime']}_({exposure_seconds}s)_Gain{metadata['AnalogueGain']}_Temp{metadata['SensorTemperature']}_{time.time()}.tiff"
        
-            t2 = time.time()
             img_array = request.make_array("raw").view(np.uint16)  
             img_array = img_array[:, :-8]
 
-            t3 = time.time()
             request.release()
 
-            t4 = time.time()
             imwrite(img_filepath, img_array)
             
-            t5 = time.time()
             median = np.median(img_array)
             with open("/home/pi/QuadStar_Auxillary_Computer/img_median.csv", "a") as f:
                 writer = csv.writer(f)
                 meta_exposure_len = metadata["ExposureTime"] / 1_000_000.0
-                writer.writerow([exposure_seconds, median])
-
-            print(f"req={t1-t0}, meta={t2-t1}, cap={t3-t2}, rel={t4-t3}, write={t5-t4}")
-         
+                writer.writerow([exposure_seconds, median])         
 
         self.close()
         return capture_dir
-
-    def collect_calibration_data(self):
-        self.picam2.configure(self.still_config)
-        self.picam2.start()
-        self.picam2.set_controls({"AeEnable": False})
-        gain_values = [1.0]  # [1.0, 2.0, 4.0]
-        exposure_values = [
-            250,
-            500,
-            1000,
-        ]  # [0.11, 0.5, 1, 5, 10, 50, 100, 500, 1000]	#ms
-        exposure_values = [ex * 10**3 for ex in exposure_values]
-
-        for exposure in exposure_values:
-            for gain in gain_values:
-                self.picam2.set_controls({"ExposureTime": int(exposure), "AnalogGain":gain})
-
-                # Save raw image to file
-                for _ in range(2):
-                    request = self.picam2.capture_request()
-                    metadata = request.get_metadata()
-                    request.save_dng(
-                        f"./data/Ex:{metadata['ExposureTime']}_Gain:{metadata['AnalogueGain']}_Temp:{metadata['SensorTemperature']}_{time.time()}.dng"
-                    )
-                    request.release()
-                    print(
-                        f"Took picture at: Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}"
-                    )
