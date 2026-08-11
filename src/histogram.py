@@ -4,7 +4,17 @@ import numpy as np
 from PIL import Image
 import rawpy
 from datetime import datetime
-from main import main_manual as capture
+import tiffile
+#from main import main_manual as capture
+
+# ========== GLOBAL PARAMS ==================
+focal_length = 5.0  # mm
+pixel_size = 1.55  # microns
+sensor_width = 4056  # px
+sensor_height = 3040  # px
+bayer_pattern = "BGGR"
+
+
 
 def load_tiff(path) :
     from PIL import Image
@@ -41,9 +51,29 @@ def load_raw(path) :
 
         print("Image dimensions:", raw_data.shape)
 
-def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False) :
-    #image = fits.getdata(image_path)
+def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False, ROI=(100,100)) :
+
+    if ROI != (sensor_width, sensor_height) :
+        print("WARNING: Analysing ROI, not full image.")
+
+    # ==== Define ROI =====
+    # Should be an x and a y range where star measurements are accepted
+    x_min =  int((sensor_width-ROI[0])/2)     #int(((1-ROI)/2) * sensor_width)
+    x_max =  int((sensor_width+ROI[0])/2)     #int((1 - ((1-ROI)/2)) * sensor_width)
+    y_min =  int((sensor_height-ROI[1])/2)     #int(((1-ROI)/2) * sensor_height)
+    y_max =  int((sensor_height+ROI[1])/2)     #int((1 - ((1-ROI)/2)) * sensor_height)
+
+
+
+
+    print(f"Selected ROI w,h: {ROI}")
+    print(f"Reading x values between: {x_min} and {x_max}: ({x_max-x_min})")
+    print(f"Reading y values between: {y_min} and {y_max}: ({y_max-y_min})")
+
     img_array = np.array(img)
+    cropped_array = img_array[y_min:y_max, x_min:x_max]
+    img_array = cropped_array
+    
 
     print("Mean: ", np.mean(img_array))
     print("Median: ", np.median(img_array))
@@ -83,8 +113,10 @@ def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False) :
     now = datetime.now()
     import os
     os.makedirs("plots", exist_ok=True)
-    plot_path = f"plots/Image-{plotname}_{now.day}-{now.month}-{now.hour}:{now.minute}:{now.second}"
+    plot_path = f"plots/Image-ROI:{ROI}_{plotname}_{now.day}-{now.month}-{now.hour}:{now.minute}:{now.second}"
     plt.savefig(f"{plot_path}.png")
+    save_tiff(img_array, plot_path)
+
     return plot_path
     
     #plt.hist(image.ravel(), bins=1000)
@@ -106,6 +138,9 @@ def capture_to_histo(exptime) :
     shutil.copy(image_path, f"{plot_path}.tiff")
     print("Image file and histogram copied to plots dir")
 
+def save_tiff(img_array, path) :
+    tiffile.imwrite(f'{path}.tiff', img_array)
+
 
 def main(exp) :
     path = "/home/thomas/Documents/Code/QuadStar/Images/20260810_183233_e-30.0_g-1.0_n-5.solve/Ex6999327_(30.0s)_Gain1.0_Temp13.0_1786350760.9048686.tiff"
@@ -122,14 +157,16 @@ def main(exp) :
         path = "/home/thomas/Documents/Code/QuadStar/Images/ceiling_tiffs/Ex999982_(1.0s)_Gain1.0_Temp15.0_1785924314.6876094.tiff"
 
     print("loading image of exp time:", exp, "s")
-
+    path = "/home/thomas/Pictures/Quadstar/Calibration/plots/Old/Image-0.15_11-8-12:2:49.tiff"
     image = load_tiff(path)
 
-    plotname = "30s"
+    plotname = "ROI Test"
+    
     plot_histogram(image, plotname)
 
 if __name__ == "__main__" :
-    #main(30)
-    import sys
-    exp = float(sys.argv[1])
-    capture_to_histo(exp)
+    main(30)
+    #import sys
+    #exp = float(sys.argv[1])
+    #capture_to_histo(exp)
+    #plot_histogram()
