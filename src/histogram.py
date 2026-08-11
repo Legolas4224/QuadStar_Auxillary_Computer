@@ -113,7 +113,8 @@ def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False, ROI=(100,1
     now = datetime.now()
     import os
     os.makedirs("plots", exist_ok=True)
-    plot_path = f"plots/Image-ROI:{ROI}_{plotname}_{now.day}-{now.month}-{now.hour}:{now.minute}:{now.second}"
+    os.makedirs(f"plots/{plotname}", exist_ok=True)
+    plot_path = f"plots/{plotname}/Image-ROI:{ROI}_{plotname}_{now.day}-{now.month}-{now.hour}:{now.minute}:{now.second}"
     plt.savefig(f"{plot_path}.png")
     save_tiff(img_array, plot_path)
 
@@ -160,9 +161,9 @@ def main(exp) :
     path = "/home/thomas/Pictures/Quadstar/Calibration/plots/Old/Image-0.15_11-8-12:2:49.tiff"
     image = load_tiff(path)
 
-    plotname = "ROI Test"
+    plotname = f"exp_{exp}s"
     
-    plot_histogram(image, plotname, ROI=100,100)
+    plot_histogram(image, plotname, ROI=(100,100))
 
 if __name__ == "__main__" :
     main(30)
