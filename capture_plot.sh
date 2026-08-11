@@ -3,5 +3,5 @@
 source .venv/bin/activate
 
 python src/histogram.py $1
-rsync -vzr /home/pi/QuadStar_Auxillary_Computer/plots thomas@10.1.1.49:/home/thomas/Pictures/Quadstar/Calibration/
+rsync -vzr /home/pi/QuadStar_Auxillary_Computer/plots thomas@10.229.169.96:/home/thomas/Pictures/Quadstar/Calibration/
 
