@@ -162,7 +162,7 @@ def main(exp) :
 
     plotname = "ROI Test"
     
-    plot_histogram(image, plotname)
+    plot_histogram(image, plotname, ROI=100,100)
 
 if __name__ == "__main__" :
     main(30)
