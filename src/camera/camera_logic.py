@@ -6,6 +6,9 @@ import os
 import subprocess
 from datetime import datetime
 from tifffile import imwrite
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
 import csv
 
 class CameraLogic:
