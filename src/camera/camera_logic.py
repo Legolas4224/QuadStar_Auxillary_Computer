@@ -43,6 +43,7 @@ class CameraLogic:
         )
 
         self.picam2.configure(self.still_config)
+        time.sleep(1)
         self.preview_started = False
 
     # Start camera
@@ -71,7 +72,7 @@ class CameraLogic:
 
 
     def run_exposures(self, exposure_seconds, gain, num_exposures):
-       
+        
         exposure_value = int(exposure_seconds * 10**6)
         gain_value = gain  # [1.0, 2.0, 4.0]
         
@@ -91,6 +92,7 @@ class CameraLogic:
         
         capture_dir = f"/home/pi/images/QuadStar/{datetime.now():%Y%m%d_%H%M%S}_e-{exposure_seconds}_g-{gain}_n-{num_exposures}.solve"
         os.makedirs(capture_dir, exist_ok=True)  
+       
         
         self.start()
 
@@ -155,57 +157,3 @@ class CameraLogic:
                     print(
                         f"Took picture at: Ex:{metadata['ExposureTime']} Gain:{metadata['AnalogueGain']} Temp:{metadata['SensorTemperature']} {time.time()}"
                     )
-
-    # Simple function to find the exposure time and gain to reach the target brightness
-    # Notes: This works but it converges to the target brightness very slowly, especially if it is overexposed.
-    # Next steps: - Try a calibration function, sweep through a range of exposure and gain to quickly get the correct setting
-    #            - Or find a math function that converges faster
-    # 			 - Try a different method of auto exposure
-    def auto_exposure(self, current, target, plate_solving):
-        min_exposure, max_exposure = 1000, 1000000
-        min_gain, max_gain = 1.0, 16.0
-
-        request = self.request_capture()
-        frame = None 
-        metadata = request.get_metadata()
-        exposure, gain = metadata["ExposureTime"], metadata["AnalogueGain"]
-        request.release()
-
-        if plate_solving:
-            while current != target:
-                scale = target / current
-                if gain < max_gain:
-                    gain *= scale
-                elif exposure < max_exposure:
-                    exposure *= scale
-                gain = max_gain if gain > max_gain else gain
-                exposure = max_exposure if exposure > max_exposure else exposure
-
-                self.set_brightness(int(exposure), gain)
-                for _ in range(5):
-                    self.capture()
-
-                print(f"Exposure: {exposure}, Gain: {gain}, Brightness: {current}")
-
-                frame = self.capture()
-                current = np.percentile(frame, 99)
-
-    def ae_plate_solving_mode(self):
-        self.picam2.set_controls({"AeEnable": False})
-
-        # This set controls is just for testing the mode
-        self.set_brightness(1000, 1.0)
-        for _ in range(5):
-            self.capture()
-
-        target_brightness = 253
-
-        print(self.get_metadat())
-
-        while True:
-            frame = self.capture()
-            current_brightness = np.percentile(frame, 99)
-            if current_brightness != target_brightness:
-                self.auto_exposure(
-                    current_brightness, target_brightness, plate_solving=True
-                )

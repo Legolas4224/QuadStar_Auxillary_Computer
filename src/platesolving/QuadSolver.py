@@ -289,10 +289,10 @@ def main(raw_image_path, filetype, fits_dir=None):
 
             if reject:
                 print("REJECTED:", image)
-                converted_files.remove(image)
+                #converted_files.remove(image)
             else:
                 print("KEEP:", image)
-                good_subs.append(image)
+                #good_subs.append(image)
             
 
     except Exception as e:
@@ -301,7 +301,7 @@ def main(raw_image_path, filetype, fits_dir=None):
         )
     # ========= Align Images =========
     print("=================================================================")
-    reference = fits.getdata(converted_files[3]).astype(np.float32)
+    reference = fits.getdata(converted_files[0]).astype(np.float32)
     frames = [
         reference
     ]  # np.array([fits.getdata(f).astype(np.float32) for f in files])
@@ -425,6 +425,7 @@ def cleanup_files(out_dir_path: str):
 
 
 if __name__ == "__main__":
+    import traceback
     success: int = 0
     try:
         if len(sys.argv) > 1:
@@ -455,7 +456,7 @@ if __name__ == "__main__":
         main(raw_image_path, raw_image_type)
 
     except Exception as err:
-        print(f"-- QuadSolver FAILED -- \n\t REASON: {err}", file=sys.stderr)
+        print(f"-- QuadSolver FAILED -- : {err}\n\t {traceback.format_exec()}", file=sys.stderr)
         success = 1
 
     if raw_image_path is not None:

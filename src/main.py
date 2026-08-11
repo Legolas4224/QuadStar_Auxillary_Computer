@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 from camera import CameraLogic
 import sys
 
