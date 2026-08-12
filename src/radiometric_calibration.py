@@ -3,22 +3,24 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import glob
 from pprint import pprint
-from histogram import load_tiff
+from histogram import load_tiff, plot_histogram
+from datetime import datetime
 
-def demosaic(img_array) :
+def demosaic(img_path) : #, output_path) :
     import cv2
 
 
     # 1. Load the raw TIFF image exactly as it is stored (grayscale + native bit depth)
     # IMREAD_ANYDEPTH handles 8-bit, 12-bit, or 16-bit TIFF files natively.
-    raw_img = cv2.imread("raw_bayer_image.tiff", cv2.IMREAD_GRAYSCALE | cv2.IMREAD_ANYDEPTH)
+    raw_img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE | cv2.IMREAD_ANYDEPTH)
 
     # 2. Convert the Bayer pattern to standard BGR color
     # Change COLOR_BAYER_RG2BGR to match your specific camera sensor array if needed (e.g., BG, GR, GB)
     color_img = cv2.cvtColor(raw_img, cv2.COLOR_BAYER_RG2BGR)
-
+    print(f"Image successfully demosaiced")
     # 3. Save the debayered RGB image 
-    cv2.imwrite("debayered_color_image.tiff", color_img)
+    #cv2.imwrite(output_path, color_img)
+    return color_img
 
 def combine_data(csv_path, image_dir) : # This looks through all the images and finds the closest datapoint from the csv. It then makes a dictionary with all the relevant info
 
@@ -71,7 +73,10 @@ def calc_stats(files_dict) :
     for entry in files_dict.values() :
         image = entry[1]
         print(image)
-        image = load_tiff(image)
+        image = demosaic(image)
+        print(np.shape(image))
+        plot_histogram(image, "debayertest", ROI=False)
+        #image = load_tiff(image)
         img_array = image
         print("Mean: ", np.mean(img_array))
         print("Median: ", np.median(img_array))
@@ -102,8 +107,7 @@ def calc_stats(files_dict) :
     print(stats_df)
     return stats_df
 
-
-
+#demosaic("/home/thomas/Documents/Code/QuadStar/Calibration/plots/0.5/Image-Mean27970.8592_ROI(100, 100)_0.5_12-8-15:58:52.tiff", "/home/thomas/Documents/Code/QuadStar/Calibration/DebayerTest/test.tiff")
 
 csv_path = "/home/thomas/Documents/Code/QuadStar/Calibration/OPM-Logs/0.5s_01.csv"      #"/home/thomas/Documents/Code/QuadStar/NewQuadstar/QuadStar_Auxillary_Computer/plots/Calibrations/0.4s_clean.csv"#"/home/thomas/Pictures/Quadstar/Calibration/plots/0.3/585mm-0.3sTest_cleaned.csv"
 image_dir = "/home/thomas/Documents/Code/QuadStar/Calibration/plots/0.5"
@@ -112,6 +116,7 @@ files_dict = combine_data(csv_path=csv_path, image_dir=image_dir)
 stats = calc_stats(files_dict)
 
 stats.plot(y="Mean ADU", x="Irradiance (W/cm^2)", kind="scatter")
-plt.title("Mean ADU vs Irradiance with 0.5s exposures")
-plt.savefig("/home/thomas/Documents/Code/QuadStar/Calibration/saved_plots/0.5s/Mean_vs_Irradiance.png")
+title = f"Mean ADU vs Irradiance with 0.5s exposures-{datetime.now()}"
+plt.title(title)
+plt.savefig(f"/home/thomas/Documents/Code/QuadStar/Calibration/saved_plots/0.5s/{title}.png")
 plt.show()

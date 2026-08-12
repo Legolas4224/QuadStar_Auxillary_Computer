@@ -52,27 +52,32 @@ def load_raw(path) :
         print("Image dimensions:", raw_data.shape)
 
 def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False, ROI=(100,100)) :
+    if ROI == False :
+        print("No ROI")
+        img_array = np.array(img)
+    else :
+        # ==== Define ROI =====
+        # Should be an x and a y range where star measurements are accepted
+        x_min =  int((sensor_width-ROI[0])/2)     #int(((1-ROI)/2) * sensor_width)
+        x_max =  int((sensor_width+ROI[0])/2)     #int((1 - ((1-ROI)/2)) * sensor_width)
+        y_min =  int((sensor_height-ROI[1])/2)     #int(((1-ROI)/2) * sensor_height)
+        y_max =  int((sensor_height+ROI[1])/2)     #int((1 - ((1-ROI)/2)) * sensor_height)
+
+
+
+
+        print(f"Selected ROI w,h: {ROI}")
+        print(f"Reading x values between: {x_min} and {x_max}: ({x_max-x_min})")
+        print(f"Reading y values between: {y_min} and {y_max}: ({y_max-y_min})")
+
+        img_array = np.array(img)
+        cropped_array = img_array[y_min:y_max, x_min:x_max]
+        img_array = cropped_array
 
     if ROI != (sensor_width, sensor_height) :
         print("WARNING: Analysing ROI, not full image.")
 
-    # ==== Define ROI =====
-    # Should be an x and a y range where star measurements are accepted
-    x_min =  int((sensor_width-ROI[0])/2)     #int(((1-ROI)/2) * sensor_width)
-    x_max =  int((sensor_width+ROI[0])/2)     #int((1 - ((1-ROI)/2)) * sensor_width)
-    y_min =  int((sensor_height-ROI[1])/2)     #int(((1-ROI)/2) * sensor_height)
-    y_max =  int((sensor_height+ROI[1])/2)     #int((1 - ((1-ROI)/2)) * sensor_height)
-
-
-
-
-    print(f"Selected ROI w,h: {ROI}")
-    print(f"Reading x values between: {x_min} and {x_max}: ({x_max-x_min})")
-    print(f"Reading y values between: {y_min} and {y_max}: ({y_max-y_min})")
-
-    img_array = np.array(img)
-    cropped_array = img_array[y_min:y_max, x_min:x_max]
-    img_array = cropped_array
+    
     
 
     print("Mean: ", np.mean(img_array))
