@@ -5,7 +5,7 @@ from PIL import Image
 import rawpy
 from datetime import datetime
 import tiffile
-from main import main_manual as capture
+
 
 # ========== GLOBAL PARAMS ==================
 focal_length = 5.0  # mm
@@ -127,6 +127,7 @@ def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False, ROI=(100,1
     #plt.show()
 
 def capture_to_histo(exptime) :
+    from main import main_manual as capture
     import glob
     image_dir = capture(exptime, 1.0, 1)
     files = sorted(glob.glob(f"{image_dir}/*"))
