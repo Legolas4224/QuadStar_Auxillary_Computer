@@ -86,22 +86,16 @@ def calc_stats(files_dict) :
         #print("Min: ", np.min(img_array))
         median = np.median(img_array)
         mean = np.mean(img_array)
-
         R_mean, G_mean, B_mean = np.mean(img_array, axis=(0,1))
         print(f"Red mean: {R_mean}")
-       
         print(f"Green mean: {G_mean}")
-        
         print(f"Blue mean: {B_mean}")
-        
-
-
         irradiance = entry[3]
         if irradiance == np.inf :
             pass
-        elif irradiance == 0 :
+        elif irradiance < 0.00005 :
             pass
-        elif irradiance > 0.001 :
+        elif irradiance > 0.0003 :
             pass
         else :
             image_list.append(image)
