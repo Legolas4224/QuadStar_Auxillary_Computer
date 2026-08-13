@@ -4,7 +4,17 @@ import numpy as np
 from PIL import Image
 import rawpy
 from datetime import datetime
-from main import main_manual as capture
+import tiffile
+
+
+# ========== GLOBAL PARAMS ==================
+focal_length = 5.0  # mm
+pixel_size = 1.55  # microns
+sensor_width = 4056  # px
+sensor_height = 3040  # px
+bayer_pattern = "BGGR"
+
+
 
 def load_tiff(path) :
     from PIL import Image
@@ -41,14 +51,49 @@ def load_raw(path) :
 
         print("Image dimensions:", raw_data.shape)
 
-def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False) :
-    #image = fits.getdata(image_path)
-    img_array = np.array(img)
+def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False, ROI=(100,100)) :
+    if ROI == False :
+        print("No ROI")
+        img_array = np.array(img)
+    else :
+        # ==== Define ROI =====
+        # Should be an x and a y range where star measurements are accepted
+        x_min =  int((sensor_width-ROI[0])/2)     #int(((1-ROI)/2) * sensor_width)
+        x_max =  int((sensor_width+ROI[0])/2)     #int((1 - ((1-ROI)/2)) * sensor_width)
+        y_min =  int((sensor_height-ROI[1])/2)     #int(((1-ROI)/2) * sensor_height)
+        y_max =  int((sensor_height+ROI[1])/2)     #int((1 - ((1-ROI)/2)) * sensor_height)
+
+
+
+
+        print(f"Selected ROI w,h: {ROI}")
+        print(f"Reading x values between: {x_min} and {x_max}: ({x_max-x_min})")
+        print(f"Reading y values between: {y_min} and {y_max}: ({y_max-y_min})")
+
+        img_array = np.array(img)
+        cropped_array = img_array[y_min:y_max, x_min:x_max]
+        img_array = cropped_array
+
+    if ROI != (sensor_width, sensor_height) :
+        print("WARNING: Analysing ROI, not full image.")
+
+    
+    
 
     print("Mean: ", np.mean(img_array))
     print("Median: ", np.median(img_array))
     print("Max: ", np.max(img_array))
     print("Min: ", np.min(img_array))
+    mean = np.mean(img_array)
+    median = np.median(img_array)
+    maximum = np.max(img_array)
+    minimum = np.max(img_array)
+    stats = {
+        "Mean" : mean,
+        "Median" : median,
+        "Max" : maximum,
+        "Min" : minimum
+         }
 
     # 4. Calculate the 95th percentile
     #    This flattens the array and finds the value where 95% of pixels are below it
@@ -83,9 +128,12 @@ def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False) :
     now = datetime.now()
     import os
     os.makedirs("plots", exist_ok=True)
-    plot_path = f"plots/Image-{plotname}_{now.day}-{now.month}-{now.hour}:{now.minute}:{now.second}"
+    os.makedirs(f"plots/{plotname}/", exist_ok=True)
+    plot_path = f"plots/{plotname}/Image-Mean{mean}_ROI{ROI}_{plotname}_{now.day}-{now.month}-{now.hour}:{now.minute}:{now.second}"
     plt.savefig(f"{plot_path}.png")
-    return plot_path
+    save_tiff(img_array, plot_path)
+
+    return plot_path, stats
     
     #plt.hist(image.ravel(), bins=1000)
     #plt.xlabel("Pixel value")
@@ -93,18 +141,24 @@ def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False) :
     #plt.title("Image Histogram")
     #plt.show()
 
-def capture_to_histo(exptime) :
+def capture_to_histo(exptime, capture_name) :
+    from main import main_manual as capture
     import glob
-    image_dir = capture(exptime, 1.0, 1)
+    image_dir = capture(exptime, 1.0, 1, wide_cam=True)
+    print(f"image_dir: {image_dir}")
     files = sorted(glob.glob(f"{image_dir}/*"))
     image = load_tiff(files[0])
     image_path = files[0]
     print(image_path)
-    plot_path = plot_histogram(image, exptime, xlog=False, ylog=True)
+    plot_path, stats = plot_histogram(image, f"{capture_name}", xlog=False, ylog=True)
     import shutil
     print("plot path", plot_path)
-    shutil.copy(image_path, f"{plot_path}.tiff")
+    shutil.copy(image_path, f"{plot_path}_full.tiff")
     print("Image file and histogram copied to plots dir")
+    return stats
+
+def save_tiff(img_array, path) :
+    tiffile.imwrite(f'{path}.tiff', img_array)
 
 
 def main(exp) :
@@ -122,14 +176,20 @@ def main(exp) :
         path = "/home/thomas/Documents/Code/QuadStar/Images/ceiling_tiffs/Ex999982_(1.0s)_Gain1.0_Temp15.0_1785924314.6876094.tiff"
 
     print("loading image of exp time:", exp, "s")
-
+    path = "/home/thomas/Pictures/Quadstar/Calibration/plots/Old/Image-0.15_11-8-12:2:49.tiff"
     image = load_tiff(path)
 
-    plotname = "30s"
-    plot_histogram(image, plotname)
+    plotname = f"exp_{exp}s"
+    
+    plot_histogram(image, plotname, ROI=(100,100))
 
 if __name__ == "__main__" :
     #main(30)
     import sys
     exp = float(sys.argv[1])
-    capture_to_histo(exp)
+    capture_name = sys.argv[2]
+    print(f"Capturing {exp}s Image...\n")
+    stats_dict = capture_to_histo(exp, capture_name)
+    print("Capture Complete\n==============")
+    print(f"Median: {stats_dict['Median']}\nMean: {stats_dict['Mean']}")
+    #plot_histogram()
