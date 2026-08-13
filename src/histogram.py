@@ -84,6 +84,16 @@ def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False, ROI=(100,1
     print("Median: ", np.median(img_array))
     print("Max: ", np.max(img_array))
     print("Min: ", np.min(img_array))
+    mean = np.mean(img_array)
+    median = np.median(img_array)
+    maximum = np.max(img_array)
+    minimum = np.max(img_array)
+    stats = {
+        "Mean" : mean,
+        "Median" : median,
+        "Max" : maximum,
+        "Min" : minimum
+         }
 
     # 4. Calculate the 95th percentile
     #    This flattens the array and finds the value where 95% of pixels are below it
@@ -119,11 +129,11 @@ def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False, ROI=(100,1
     import os
     os.makedirs("plots", exist_ok=True)
     os.makedirs(f"plots/{plotname}", exist_ok=True)
-    plot_path = f"plots/{plotname}/Image-ROI:{ROI}_{plotname}_{now.day}-{now.month}-{now.hour}:{now.minute}:{now.second}"
+    plot_path = f"plots/{plotname}/Image-Mean{mean}_ROI{ROI}_{plotname}_{now.day}-{now.month}-{now.hour}:{now.minute}:{now.second}"
     plt.savefig(f"{plot_path}.png")
     save_tiff(img_array, plot_path)
 
-    return plot_path
+    return plot_path, stats
     
     #plt.hist(image.ravel(), bins=1000)
     #plt.xlabel("Pixel value")
@@ -139,11 +149,12 @@ def capture_to_histo(exptime) :
     image = load_tiff(files[0])
     image_path = files[0]
     print(image_path)
-    plot_path = plot_histogram(image, exptime, xlog=False, ylog=True)
+    plot_path, stats = plot_histogram(image, exptime, xlog=False, ylog=True)
     import shutil
     print("plot path", plot_path)
     shutil.copy(image_path, f"{plot_path}_full.tiff")
     print("Image file and histogram copied to plots dir")
+    return stats
 
 def save_tiff(img_array, path) :
     tiffile.imwrite(f'{path}.tiff', img_array)
@@ -175,5 +186,8 @@ if __name__ == "__main__" :
     #main(30)
     import sys
     exp = float(sys.argv[1])
-    capture_to_histo(exp)
+    print(f"Capturing {exp}s Image...\n")
+    stats_dict = capture_to_histo(exp)
+    print("Capture Complete\n==============")
+    print(f"Median: {stats_dict['Median']}\nMean: {stats_dict['Mean']}")
     #plot_histogram()
