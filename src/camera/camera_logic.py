@@ -11,6 +11,9 @@ import csv
 class CameraLogic:
     # Initialise camera
     def __init__(self, manual=False, config=None, exposure=None):
+
+        wide_cam: bool = False
+
         try:
             self.picam2 = Picamera2()
         except IndexError as idx_err:
@@ -23,22 +26,34 @@ class CameraLogic:
         else:
             exposure_microsecs = int(500_000) # default to 0.5s
 
-        dimensions = (4056, 3040)
+        dimensions_normal = (4056, 3040)
         dimensions_wide = (4608, 2592)
+        bit_depth = 12
+
+        if wide_cam:
+            dimensions = dimensions_wide
+        else:
+            dimensions = dimensions_normal
+            
+        controls: dict = {
+            "FrameDurationLimits": (110, 90_000_000),
+            "AeEnable": False,
+            "AwbEnable": False,
+            "ColourGains": (1.0, 1.0),
+            "ExposureTime": exposure_microsecs,
+            "AnalogueGain": 1.0,
+        }
+
+        # only for wide camera vv
+        if wide_cam:
+            controls["AfMode"] = controls.AfModeEnum.Manual,
+            controls["LensPosition"] = 0.0 # maybe change due to IR long pass filter
 
         self.still_config = self.picam2.create_still_configuration(
             main={"size": dimensions},
-            raw={"format": "SRGGB12", "size": dimensions},
-            sensor={"output_size": dimensions, "bit_depth": 12},
-            controls={
-                "FrameDurationLimits": (110, 90_000_000),
-                "AeEnable": False,
-                "AwbEnable": False,
-                "ColourGains": (1.0, 1.0),
-                #"AfMode": controls.AfModeEnum.Manual,
-                "ExposureTime": exposure_microsecs,
-                "AnalogueGain": 1.0,
-            },
+            raw={"format": f"SRGGB{bit_depth}", "size": dimensions},
+            sensor={"output_size": dimensions, "bit_depth": bit_depth},
+            controls=controls,
             buffer_count=1,
         )
 
