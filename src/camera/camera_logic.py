@@ -6,6 +6,9 @@ import os
 import subprocess
 from datetime import datetime
 from tifffile import imwrite
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
 import csv
 
 
@@ -93,8 +96,8 @@ class CameraLogic:
     def run_exposures(self, exposure_seconds, gain, num_exposures):
 
         exposure_value = int(exposure_seconds * 10**6)
-        gain_value = gain  # [1.0, 2.0, 4.0]
-
+        gain_value = gain  
+        
         changed = False
         if self.still_config["controls"]["ExposureTime"] != exposure_value:
             self.still_config["controls"]["ExposureTime"] = exposure_value
@@ -103,6 +106,8 @@ class CameraLogic:
         if self.still_config["controls"]["AnalogueGain"] != gain_value:
             self.still_config["controls"]["AnalogueGain"] = gain_value
             changed = True
+
+        print(self.still_config)
 
         if changed:
             self.picam2.configure(self.still_config)
@@ -140,9 +145,12 @@ class CameraLogic:
                 print(f"-- Warning: Actual and expected exposures not matched! --\n -> Actual Exposure: {meta_exposure_len}us\n -> Expected Exposure: {exposure_value}us")
 
             median = np.median(img_array)
+            max_pixel_value = 65520.0
+            max_value = np.max(img_array)
+            count = np.sum(img_array == max_pixel_value)
             with open("/home/pi/QuadStar_Auxillary_Computer/img_median.csv", "a") as f:
                 writer = csv.writer(f)
-                writer.writerow([exposure_seconds, median])
+                writer.writerow([exposure_seconds, median, max_value, count])
 
         capture_dir_renamed = capture_dir.removesuffix(".taking") + ".solve"
         os.rename(capture_dir, capture_dir_renamed)

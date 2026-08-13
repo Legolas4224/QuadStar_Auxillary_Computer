@@ -22,7 +22,6 @@ def main_manual(exposure_length, gain, num_frames, wide_cam = False):
     cam.close()
     return output_dir
 
-
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         if sys.argv[1] == "-h":
