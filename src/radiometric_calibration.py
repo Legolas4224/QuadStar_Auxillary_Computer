@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import glob
 from pprint import pprint
 from histogram import load_tiff, plot_histogram
-from datetime import datetime
+from datetime import datetime, timedelta
 
 def demosaic(img_path) : #, output_path) :
     import cv2
@@ -23,7 +23,8 @@ def demosaic(img_path) : #, output_path) :
     return color_img
 
 def combine_data(csv_path, image_dir) : # This looks through all the images and finds the closest datapoint from the csv. It then makes a dictionary with all the relevant info
-
+    #start_time = 0
+    #end_sample
     df = pd.read_csv(csv_path, skiprows=14)
     df["time"] = pd.to_timedelta(df["Time of day (hh:mm:ss) "])
     print(df)
@@ -46,18 +47,28 @@ def combine_data(csv_path, image_dir) : # This looks through all the images and 
 
             # Find closest CSV timestamp
             idx = (df["time"] - image_timedelta).abs().idxmin()
-            row = df.loc[idx]
-            print(f"Found closest match for image {file}:")#\n{row}\n--------")
             
-            power = row["Power (W)"]
-            irradiance = row["Irradiance (W/cm²)"]
-            power_dbm = row["Power (dBm)"]
+            row = df.loc[idx]
+            print(f"time: {row["time"]}")
+            print(f"image time: {image_timedelta}")
+            time_difference = abs(row["time"]-image_timedelta)
+            if time_difference > timedelta(seconds=1) :
+                print(f"Delta too large between image and measurement. Not including datapoint")
+            else :
 
-            roi_file = file.replace("_full", "")
+
+                print(f"Time delta: {time_difference}")
+                print(f"Found closest match for image {file}:")#\n{row}\n--------")
+            
+                power = row["Power (W)"]
+                irradiance = row["Irradiance (W/cm²)"]
+                power_dbm = row["Power (dBm)"]
+
+                roi_file = file.replace("_full", "")
 
 
 
-            files_dict[time] = [file, roi_file, power, irradiance, power_dbm]
+                files_dict[time] = [file, roi_file, power, irradiance, power_dbm]
     pprint(files_dict)
     return files_dict
 
@@ -93,10 +104,10 @@ def calc_stats(files_dict) :
         irradiance = entry[3]
         if irradiance == np.inf :
             pass
-        elif irradiance < 0.00005 :
+        elif irradiance > 0.00025 :
             pass
-        elif irradiance > 0.0003 :
-            pass
+        #elif irradiance == 0.0000 :
+        #    pass
         else :
             image_list.append(image)
             median_list.append(median)
