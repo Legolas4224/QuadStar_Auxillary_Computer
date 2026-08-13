@@ -10,9 +10,7 @@ import csv
 
 class CameraLogic:
     # Initialise camera
-    def __init__(self, manual=False, config=None, exposure=None):
-
-        wide_cam: bool = False
+    def __init__(self, manual=False, config=None, exposure=None, wide_cam: bool=False):
 
         try:
             self.picam2 = Picamera2()
@@ -20,11 +18,8 @@ class CameraLogic:
             subprocess.run(["vcgencmd", "get_camera"])
             self.picam2 = Picamera2()
 
-        exposure_microsecs: int
-        if exposure is not None:
-            exposure_microsecs = int(exposure * 1_000_000)
-        else:
-            exposure_microsecs = int(500_000) # default to 0.5s
+        assert exposure is not None, "Must give a valid exposure length"
+        exposure_microsecs: int = int(exposure * 1_000_000)
 
         dimensions_normal = (4056, 3040)
         dimensions_wide = (4608, 2592)
@@ -36,7 +31,7 @@ class CameraLogic:
             dimensions = dimensions_normal
             
         cam_controls: dict = {
-            "FrameDurationLimits": (110, 90_000_000),
+            "FrameDurationLimits": (110, 100_000_000),
             "AeEnable": False,
             "AwbEnable": False,
             "ColourGains": (1.0, 1.0),
@@ -132,8 +127,9 @@ class CameraLogic:
             median = np.median(img_array)
             with open("/home/pi/QuadStar_Auxillary_Computer/img_median.csv", "a") as f:
                 writer = csv.writer(f)
-                meta_exposure_len = metadata["ExposureTime"] / 1_000_000.0
+                meta_exposure_len = metadata["ExposureTime"]
                 writer.writerow([exposure_seconds, median])         
+                assert meta_exposure_len == exposure_value, f"meta_exposure_len: {meta_exposure_len}, exposure_value: {exposure_value}"
 
         self.close()
         return capture_dir
