@@ -132,32 +132,32 @@ def calc_stats(files_dict) :
     return stats_df
 
 #demosaic("/home/thomas/Documents/Code/QuadStar/Calibration/plots/0.5/Image-Mean27970.8592_ROI(100, 100)_0.5_12-8-15:58:52.tiff", "/home/thomas/Documents/Code/QuadStar/Calibration/DebayerTest/test.tiff")
+def main() :
+    csv_path = "/home/thomas/Documents/Code/QuadStar/Calibration/OPM-Logs/0.5s_02.csv"      #"/home/thomas/Documents/Code/QuadStar/NewQuadstar/QuadStar_Auxillary_Computer/plots/Calibrations/0.4s_clean.csv"#"/home/thomas/Pictures/Quadstar/Calibration/plots/0.3/585mm-0.3sTest_cleaned.csv"
+    image_dir = "/home/thomas/Documents/Code/QuadStar/Calibration/plots/0.5/"
 
-csv_path = "/home/thomas/Documents/Code/QuadStar/Calibration/OPM-Logs/0.5s_02.csv"      #"/home/thomas/Documents/Code/QuadStar/NewQuadstar/QuadStar_Auxillary_Computer/plots/Calibrations/0.4s_clean.csv"#"/home/thomas/Pictures/Quadstar/Calibration/plots/0.3/585mm-0.3sTest_cleaned.csv"
-image_dir = "/home/thomas/Documents/Code/QuadStar/Calibration/plots/0.5/"
+    files_dict = combine_data(csv_path=csv_path, image_dir=image_dir)
+    stats = calc_stats(files_dict)
 
-files_dict = combine_data(csv_path=csv_path, image_dir=image_dir)
-stats = calc_stats(files_dict)
+    #stats.plot(y="Mean R", x="Irradiance (W/cm^2)", kind="scatter")
+    #stats.plot(y="Mean G", x="Irradiance (W/cm^2)", kind="scatter")
+    #stats.plot(y="Mean B", x="Irradiance (W/cm^2)", kind="scatter")
+    #title = f"Mean ADU vs Irradiance with 1s exposures-{datetime.now()}"
+    #plt.title(title)
+    #plt.savefig(f"/home/thomas/Documents/Code/QuadStar/Calibration/saved_plots/{title}.png")
+    #plt.show()
 
-#stats.plot(y="Mean R", x="Irradiance (W/cm^2)", kind="scatter")
-#stats.plot(y="Mean G", x="Irradiance (W/cm^2)", kind="scatter")
-#stats.plot(y="Mean B", x="Irradiance (W/cm^2)", kind="scatter")
-#title = f"Mean ADU vs Irradiance with 1s exposures-{datetime.now()}"
-#plt.title(title)
-#plt.savefig(f"/home/thomas/Documents/Code/QuadStar/Calibration/saved_plots/{title}.png")
-#plt.show()
-
-x = stats["Irradiance (W/cm^2)"]
-y_array = [stats["Mean R"], stats["Mean G"], stats["Mean B"]]
+    x = stats["Irradiance (W/cm^2)"]
+    y_array = [stats["Mean R"], stats["Mean G"], stats["Mean B"]]
 
 
-plt.scatter(x, stats["Mean R"], color="red", label="Mean R")
-plt.scatter(x, stats["Mean G"], color="green", label="Mean G")
-plt.scatter(x, stats["Mean B"], color="blue", label="Mean B")
+    plt.scatter(x, stats["Mean R"], color="red", label="Mean R")
+    plt.scatter(x, stats["Mean G"], color="green", label="Mean G")
+    plt.scatter(x, stats["Mean B"], color="blue", label="Mean B")
 
-plt.xlabel("Irradiance (W/cm^2)")
-plt.ylabel("Mean ADU")
-plt.title("Mean ADU vs Irradiance with 0.5s exposures")
-plt.legend()
-plt.savefig(f"/home/thomas/Documents/Code/QuadStar/Calibration/saved_plots/Mean_ADU_vs_Irradiance_{datetime.now()}.png")
-plt.show()
+    plt.xlabel("Irradiance (W/cm^2)")
+    plt.ylabel("Mean ADU")
+    plt.title("Mean ADU vs Irradiance with 0.5s exposures")
+    plt.legend()
+    plt.savefig(f"/home/thomas/Documents/Code/QuadStar/Calibration/saved_plots/Mean_ADU_vs_Irradiance_{datetime.now()}.png")
+    plt.show()
