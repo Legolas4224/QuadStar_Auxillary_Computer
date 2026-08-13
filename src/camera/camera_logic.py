@@ -35,7 +35,7 @@ class CameraLogic:
         else:
             dimensions = dimensions_normal
             
-        controls: dict = {
+        cam_controls: dict = {
             "FrameDurationLimits": (110, 90_000_000),
             "AeEnable": False,
             "AwbEnable": False,
@@ -46,19 +46,19 @@ class CameraLogic:
 
         # only for wide camera vv
         if wide_cam:
-            controls["AfMode"] = controls.AfModeEnum.Manual,
-            controls["LensPosition"] = 0.0 # maybe change due to IR long pass filter
+            cam_controls["AfMode"] = controls.AfModeEnum.Manual,
+            cam_controls["LensPosition"] = 0.0 # maybe change due to IR long pass filter
 
         self.still_config = self.picam2.create_still_configuration(
             main={"size": dimensions},
             raw={"format": f"SRGGB{bit_depth}", "size": dimensions},
             sensor={"output_size": dimensions, "bit_depth": bit_depth},
-            controls=controls,
+            controls=cam_controls,
             buffer_count=1,
         )
 
         self.picam2.configure(self.still_config)
-        time.sleep(1)
+        #time.sleep(1)
         self.preview_started = False
 
     # Start camera
