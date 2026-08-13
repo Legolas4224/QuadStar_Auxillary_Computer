@@ -77,7 +77,7 @@ class CameraLogic:
     def run_exposures(self, exposure_seconds, gain, num_exposures):
         
         exposure_value = int(exposure_seconds * 10**6)
-        gain_value = gain  # [1.0, 2.0, 4.0]
+        gain_value = gain  
         
         changed = False
         if self.still_config["controls"]["ExposureTime"] != exposure_value:
@@ -88,26 +88,25 @@ class CameraLogic:
             self.still_config["controls"]["AnalogueGain"] = gain_value
             changed = True
 
+        print(self.still_config)
+
         if changed:
             self.picam2.configure(self.still_config)
 
-        time.sleep(0.5)
-
-        print(self.still_config)
+        time.sleep(1)
         
         capture_dir = f"/home/pi/images/QuadStar/{datetime.now():%Y%m%d_%H%M%S}_e-{exposure_seconds}_g-{gain}_n-{num_exposures}.solve"
         os.makedirs(capture_dir, exist_ok=True)  
        
-        
         self.start()
 
         # Save raw image to file
         for _ in range(num_exposures):
-            print(f"taking image, exposure: {exposure_value}") 
+            #print(f"taking image, exposure: {exposure_value}") 
             request = self.picam2.capture_request()
 
             metadata= request.get_metadata()
-            print(f"metadata: {metadata}")
+            #print(f"metadata: {metadata}")
             img_filepath = f"{capture_dir}/Ex{metadata['ExposureTime']}_({exposure_seconds}s)_Gain{metadata['AnalogueGain']}_Temp{metadata['SensorTemperature']}_{time.time()}.tiff"
        
             img_array = request.make_array("raw").view(np.uint16)  
@@ -118,10 +117,13 @@ class CameraLogic:
             imwrite(img_filepath, img_array)
             
             median = np.median(img_array)
+            max_pixel_value = 65520.0
+            max_value = np.max(img_array)
+            count = np.sum(img_array == max_pixel_value)
             with open("/home/pi/QuadStar_Auxillary_Computer/img_median.csv", "a") as f:
                 writer = csv.writer(f)
                 meta_exposure_len = metadata["ExposureTime"] / 1_000_000.0
-                writer.writerow([exposure_seconds, median])         
+                writer.writerow([exposure_seconds, median, max_value, count])         
 
-        self.close()
+        self.picam2.stop()
         return capture_dir
