@@ -120,7 +120,7 @@ class CameraLogic:
 
         # Save raw image to file
         for _ in range(num_exposures):
-            print(f"taking image, exposure: {exposure_value}")
+            print(f"taking image, exposure: {exposure_value / 1_000_000}s")
             request = self.picam2.capture_request()
 
             metadata = request.get_metadata()
@@ -133,13 +133,16 @@ class CameraLogic:
             request.release()
 
             imwrite(img_filepath, img_array)
+ 
+            meta_exposure_len = metadata["ExposureTime"]
+            tolerance = exposure_value / 100
+            if not np.abs(meta_exposure_len - exposure_value) <= tolerance:
+                print(f"-- Warning: Actual and expected exposures not matched! --\n -> Actual Exposure: {meta_exposure_len}us\n -> Expected Exposure: {exposure_value}us")
 
             median = np.median(img_array)
             with open("/home/pi/QuadStar_Auxillary_Computer/img_median.csv", "a") as f:
                 writer = csv.writer(f)
-                meta_exposure_len = metadata["ExposureTime"]
                 writer.writerow([exposure_seconds, median])
-                # assert meta_exposure_len == exposure_value, f"meta_exposure_len: {meta_exposure_len}, exposure_value: {exposure_value}"
 
         capture_dir_renamed = capture_dir.removesuffix(".taking") + ".solve"
         os.rename(capture_dir, capture_dir_renamed)

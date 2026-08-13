@@ -16,7 +16,7 @@ def calculate_exposure(test_vals):
 
     #
     AIM_BRIGHTNESS = 10000 # change this maybe (guess)
-    MAX_EXPOSURE = 7 # 40 secs max for auto solver to utilize
+    MAX_EXPOSURE = 10 # 50 secs max for auto solver to utilize
     MIN_EXPOSURE = 0.005 # 1/200th of a sec
     #
 
@@ -24,6 +24,9 @@ def calculate_exposure(test_vals):
     exposure = round(exposure, 3)
     exposure = max(MIN_EXPOSURE, exposure)
     exposure = min(MAX_EXPOSURE, exposure)
+
+    # FOR TESTING
+    # exposure = MAX_EXPOSURE 
 
     return exposure
 
@@ -42,7 +45,7 @@ def main():
     calculated_exposure = calculate_exposure(vals)
     NUM_FRAMES = 5
 
-    cam = CameraLogic(manual=True)
+    cam = CameraLogic(manual=True, exposure=calculated_exposure)
     cam.run_exposures(calculated_exposure, 1.0, NUM_FRAMES)
     cam.close()
 
