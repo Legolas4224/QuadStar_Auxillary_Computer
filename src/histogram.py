@@ -144,7 +144,8 @@ def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False, ROI=(100,1
 def capture_to_histo(exptime, capture_name) :
     from main import main_manual as capture
     import glob
-    image_dir = capture(exptime, 1.0, 1)
+    image_dir = capture(exptime, 1.0, 1, wide_cam=True)
+    print(f"image_dir: {image_dir}")
     files = sorted(glob.glob(f"{image_dir}/*"))
     image = load_tiff(files[0])
     image_path = files[0]

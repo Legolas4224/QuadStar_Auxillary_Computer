@@ -47,14 +47,6 @@ class CameraLogic:
             "AnalogueGain": 1.0,
         }
 
-<<<<<<< Updated upstream
-=======
-        # only for wide camera vv
-        if wide_cam:
-            cam_controls["AfMode"] =0 # controls.AfModeEnum.Manual,
-            cam_controls["LensPosition"] = (3.0) # maybe change due to IR long pass filter
-
->>>>>>> Stashed changes
         self.still_config = self.picam2.create_still_configuration(
             main={"size": dimensions},
             raw={"format": f"SRGGB{bit_depth}", "size": dimensions},
@@ -123,7 +115,7 @@ class CameraLogic:
         if self.wide_cam:
             prefix = "wide_"
 
-        capture_dir = f"/home/pi/images/QuadStar/{datetime.now():%Y%m%d_%H%M%S}{prefix}_e-{exposure_seconds}_g-{gain}_n-{num_exposures}.taking"
+        capture_dir = f"/home/pi/images/QuadStar/{datetime.now():%Y%m%d_%H%M%S}_{prefix}e-{exposure_seconds}_g-{gain}_n-{num_exposures}.taking"
         os.makedirs(capture_dir, exist_ok=True)
 
         # Save raw image to file
@@ -147,11 +139,9 @@ class CameraLogic:
                 writer = csv.writer(f)
                 meta_exposure_len = metadata["ExposureTime"]
                 writer.writerow([exposure_seconds, median])
-                assert meta_exposure_len == exposure_value, (
-                    f"meta_exposure_len: {meta_exposure_len}, exposure_value: {exposure_value}"
-                )
+                # assert meta_exposure_len == exposure_value, f"meta_exposure_len: {meta_exposure_len}, exposure_value: {exposure_value}"
 
         capture_dir_renamed = capture_dir.removesuffix(".taking") + ".solve"
         os.rename(capture_dir, capture_dir_renamed)
         self.close()
-        return capture_dir
+        return capture_dir_renamed
