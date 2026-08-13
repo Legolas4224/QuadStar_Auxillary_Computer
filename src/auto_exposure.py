@@ -36,9 +36,9 @@ def calculate_exposure(test_vals):
     gradient, intercept = coeffs
 
     #
-    AIM_BRIGHTNESS = np.mean(target_median)
-    MAX_EXPOSURE = 7 # 40 secs max for auto solver to utilize
-    MIN_EXPOSURE = 0.00011 # Lowest value possible for Pi HQ camera
+    AIM_BRIGHTNESS = 10000 # change this maybe (guess)
+    MAX_EXPOSURE = 10 # 50 secs max for auto solver to utilize
+    MIN_EXPOSURE = 0.005 # 1/200th of a sec
     #
 
     exposure = gradient * AIM_BRIGHTNESS + intercept
@@ -47,6 +47,8 @@ def calculate_exposure(test_vals):
     exposure = min(MAX_EXPOSURE, exposure)
 
     print(f"\n\nTargets: {target_median}, Aim brightness: {AIM_BRIGHTNESS}, new exposure: {exposure}\n\n")
+    # FOR TESTING
+    # exposure = MAX_EXPOSURE 
 
     return exposure
 
@@ -74,7 +76,7 @@ def main():
     calculated_exposure = calculate_exposure(vals)
     NUM_FRAMES = 5
 
-    cam = CameraLogic(manual=True)
+    cam = CameraLogic(manual=True, exposure=calculated_exposure)
     cam.run_exposures(calculated_exposure, 1.0, NUM_FRAMES)
     cam.close()
 
