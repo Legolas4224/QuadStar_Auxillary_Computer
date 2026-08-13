@@ -8,8 +8,8 @@ CSV_FILE="/home/pi/QuadStar_Auxillary_Computer/img_median.csv"
 # python src/main.py 0.5 	1.0 	5
 # python src/main.py 3 	1.0 	5
 # python src/main.py 5 	1.0 	5
-python src/main.py 0.5 1.0 3
+python src/main.py 1.0 1.0 10
 #python src/main.py 30 1.0 5
-python src/auto_exposure.py
+#python src/auto_exposure.py
 
 echo "All exposures captured"

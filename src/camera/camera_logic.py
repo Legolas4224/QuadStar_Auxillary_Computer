@@ -11,10 +11,14 @@ import csv
 
 class CameraLogic:
     # Initialise camera
+
     def __init__(
         self, manual=False, config=None, exposure=None, wide_cam: bool = False
     ):
         self.wide_cam = wide_cam
+        if wide_cam == True :
+            print("WARNING: CAMERA SET TO WIDECAM")
+
         try:
             self.picam2 = Picamera2()
         except IndexError as idx_err:
@@ -30,6 +34,7 @@ class CameraLogic:
 
         if wide_cam:
             dimensions = dimensions_wide
+            bit_depth = 10
         else:
             dimensions = dimensions_normal
 
@@ -42,6 +47,14 @@ class CameraLogic:
             "AnalogueGain": 1.0,
         }
 
+<<<<<<< Updated upstream
+=======
+        # only for wide camera vv
+        if wide_cam:
+            cam_controls["AfMode"] =0 # controls.AfModeEnum.Manual,
+            cam_controls["LensPosition"] = (3.0) # maybe change due to IR long pass filter
+
+>>>>>>> Stashed changes
         self.still_config = self.picam2.create_still_configuration(
             main={"size": dimensions},
             raw={"format": f"SRGGB{bit_depth}", "size": dimensions},

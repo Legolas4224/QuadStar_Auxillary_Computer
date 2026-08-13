@@ -128,7 +128,7 @@ def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False, ROI=(100,1
     now = datetime.now()
     import os
     os.makedirs("plots", exist_ok=True)
-    os.makedirs(f"plots/{plotname}", exist_ok=True)
+    os.makedirs(f"plots/{plotname}/", exist_ok=True)
     plot_path = f"plots/{plotname}/Image-Mean{mean}_ROI{ROI}_{plotname}_{now.day}-{now.month}-{now.hour}:{now.minute}:{now.second}"
     plt.savefig(f"{plot_path}.png")
     save_tiff(img_array, plot_path)
@@ -141,7 +141,7 @@ def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False, ROI=(100,1
     #plt.title("Image Histogram")
     #plt.show()
 
-def capture_to_histo(exptime) :
+def capture_to_histo(exptime, capture_name) :
     from main import main_manual as capture
     import glob
     image_dir = capture(exptime, 1.0, 1)
@@ -149,7 +149,7 @@ def capture_to_histo(exptime) :
     image = load_tiff(files[0])
     image_path = files[0]
     print(image_path)
-    plot_path, stats = plot_histogram(image, exptime, xlog=False, ylog=True)
+    plot_path, stats = plot_histogram(image, f"{capture_name}", xlog=False, ylog=True)
     import shutil
     print("plot path", plot_path)
     shutil.copy(image_path, f"{plot_path}_full.tiff")
@@ -186,8 +186,9 @@ if __name__ == "__main__" :
     #main(30)
     import sys
     exp = float(sys.argv[1])
+    capture_name = sys.argv[2]
     print(f"Capturing {exp}s Image...\n")
-    stats_dict = capture_to_histo(exp)
+    stats_dict = capture_to_histo(exp, capture_name)
     print("Capture Complete\n==============")
     print(f"Median: {stats_dict['Median']}\nMean: {stats_dict['Mean']}")
     #plot_histogram()
