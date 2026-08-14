@@ -132,7 +132,6 @@ def calc_stats(files_dict) :
     return stats_df
 
 #demosaic("/home/thomas/Documents/Code/QuadStar/Calibration/plots/0.5/Image-Mean27970.8592_ROI(100, 100)_0.5_12-8-15:58:52.tiff", "/home/thomas/Documents/Code/QuadStar/Calibration/DebayerTest/test.tiff")
-
 def main() :
     csv_path = "/home/thomas/Documents/Code/QuadStar/Calibration/OPM-Logs/0.5s_02.csv"      #"/home/thomas/Documents/Code/QuadStar/NewQuadstar/QuadStar_Auxillary_Computer/plots/Calibrations/0.4s_clean.csv"#"/home/thomas/Pictures/Quadstar/Calibration/plots/0.3/585mm-0.3sTest_cleaned.csv"
     image_dir = "/home/thomas/Documents/Code/QuadStar/Calibration/plots/0.5/"

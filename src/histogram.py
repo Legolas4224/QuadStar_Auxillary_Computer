@@ -51,21 +51,18 @@ def load_raw(path) :
 
         print("Image dimensions:", raw_data.shape)
 
-def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False, ROI=(100,100)) :
+
+def extract_ROI(img, ROI=(100,100)) :
     if ROI == False :
-        print("No ROI")
-        img_array = np.array(img)
+            print("No ROI")
+            img_array = np.array(img)
     else :
         # ==== Define ROI =====
-        # Should be an x and a y range where star measurements are accepted
+        # Should be an x and a y range where measurements are accepted
         x_min =  int((sensor_width-ROI[0])/2)     #int(((1-ROI)/2) * sensor_width)
         x_max =  int((sensor_width+ROI[0])/2)     #int((1 - ((1-ROI)/2)) * sensor_width)
         y_min =  int((sensor_height-ROI[1])/2)     #int(((1-ROI)/2) * sensor_height)
         y_max =  int((sensor_height+ROI[1])/2)     #int((1 - ((1-ROI)/2)) * sensor_height)
-
-
-
-
         print(f"Selected ROI w,h: {ROI}")
         print(f"Reading x values between: {x_min} and {x_max}: ({x_max-x_min})")
         print(f"Reading y values between: {y_min} and {y_max}: ({y_max-y_min})")
@@ -77,9 +74,11 @@ def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False, ROI=(100,1
     if ROI != (sensor_width, sensor_height) :
         print("WARNING: Analysing ROI, not full image.")
 
-    
-    
+    return img_array
 
+
+def plot_histogram(img_array, plotname, xlog=False, ylog=False, clip=False) :
+    
     print("Mean: ", np.mean(img_array))
     print("Median: ", np.median(img_array))
     print("Max: ", np.max(img_array))
@@ -87,7 +86,7 @@ def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False, ROI=(100,1
     mean = np.mean(img_array)
     median = np.median(img_array)
     maximum = np.max(img_array)
-    minimum = np.max(img_array)
+    minimum = np.min(img_array)
     stats = {
         "Mean" : mean,
         "Median" : median,
@@ -144,16 +143,16 @@ def plot_histogram(img, plotname, xlog=False, ylog=False, clip=False, ROI=(100,1
 def capture_to_histo(exptime, capture_name) :
     from main import main_manual as capture
     import glob
-    image_dir = capture(exptime, 1.0, 1, wide_cam=True)
-    print(f"image_dir: {image_dir}")
-    files = sorted(glob.glob(f"{image_dir}/*"))
-    image = load_tiff(files[0])
-    image_path = files[0]
+    image_dir = capture(exptime, 1.0, 1, wide_cam=True) # takes image
+    print(f"image_dir: {image_dir}")                                    
+    files = sorted(glob.glob(f"{image_dir}/*"))         # finds files in image dir 
+    image = load_tiff(files[0])                         # loads images 
+    image_path = files[0]                               # 
     print(image_path)
-    plot_path, stats = plot_histogram(image, f"{capture_name}", xlog=False, ylog=True)
-    import shutil
-    print("plot path", plot_path)
-    shutil.copy(image_path, f"{plot_path}_full.tiff")
+    plot_path, stats = plot_histogram(image, f"{capture_name}", xlog=False, ylog=True) # plots the histogram of the image, including adding ROI. calculates image stats
+    import shutil                                                                       
+    print("plot path", plot_path)                                       
+    shutil.copy(image_path, f"{plot_path}_full.tiff")           # copies the image to the same dir as the plot and cropped image
     print("Image file and histogram copied to plots dir")
     return stats
 
