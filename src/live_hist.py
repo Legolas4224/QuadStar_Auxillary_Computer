@@ -56,7 +56,7 @@ def live(exposure_time, test_name=f"{exposure_time}"+f"{datetime.now()}", send_t
             with contextlib.redirect_stdout(f):
         
                 
-                image_dir = capture(exposure_time, , 1, wide_cam=wide_cam) # takes image and returns save path
+                image_dir = capture(exposure_time, 1.0 , 1, wide_cam=wide_cam) # takes image and returns save path
                 print(f"Image saved as: {image_dir}")                                    
                 files = sorted(glob.glob(f"{image_dir}/*"))         # finds files in image dir 
                 if not demosaic : 
@@ -65,12 +65,12 @@ def live(exposure_time, test_name=f"{exposure_time}"+f"{datetime.now()}", send_t
                     image = RC.demosaic(files[0])
         
                 ROI_array = hist.extract_ROI(image)
-                
+                shutil.rmtree(image_dir) 
     
         tp.live_plot(ROI_array)
         time.sleep(0.1)
-    print(image_dir )
-    time.sleep(5)
+        print(image_dir )
+        time.sleep(0.1)
 
 def load(filepath, demosaic=True) :
     run = True
@@ -89,4 +89,4 @@ def load(filepath, demosaic=True) :
         tp.live_plot(ROI_array)
         time.sleep(1)
 
-live(0.5, "test") 
+live(0.01, "test") 
