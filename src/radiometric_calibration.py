@@ -181,7 +181,7 @@ def rsync_files(source, destination) :
 
 #demosaic("/home/thomas/Documents/Code/QuadStar/Calibration/plots/0.5/Image-Mean27970.8592_ROI(100, 100)_0.5_12-8-15:58:52.tiff", "/home/thomas/Documents/Code/QuadStar/Calibration/DebayerTest/test.tiff")
 
-def collect_data(exposure_time, num_exposures, test_name, rsync_to="~/Documents/Code/QuadStar/Calibration/" ,send_to_me=True, make_histo=True, wide_cam=False, demosaic=True) :
+def collect_data(exposure_time, num_exposures, test_name, rsync_to="~/Documents/Code/QuadStar/Calibration/" ,send_to_me=True, make_histo=True, wide_cam=False, demosaic_image=True) :
     input("Press ENTER to begin capture. Make sure OPM is logging first!...")
     print("Running image sensor calibration!")
     print(f"Capturing image, exposure: {exposure_time}s")
@@ -195,17 +195,17 @@ def collect_data(exposure_time, num_exposures, test_name, rsync_to="~/Documents/
         files.append(image_dir)
         image_file = image_dir+"/"
         rsync_files(image_file, rsync_to)
+        #demosaic_image = True                                    
+        #files = sorted(glob.glob(f"{image_dir}+'/*'"))         # finds files in image dir 
+        #if demosaic_image == False : 
+        #    image = hist.load_tiff(files) 
+        #else : 
+        #    image = demosaic(files)
+        #    print("demosaiced image")
+        #ROI_array = hist.extract_ROI(image)
+        #tp.live_plot(ROI_array)
     print("Capture and sync complete")
-                                        
-    files = sorted(glob.glob(f"{image_dir}/*"))         # finds files in image dir 
-    if not demosaic : 
-        image = hist.load_tiff(files[0]) 
-    else : 
-        image = demosaic(files[0])
 
-    ROI_array = hist.extract_ROI(image)
-    tp.live_plot(ROI_array)
-  
 
 
 def analyse(choose_dirs=True) :
@@ -255,7 +255,7 @@ if __name__ == "__main__" :
             print(f"Saving to: {rsync_dir}")
         else :
             rsync_dir = f"thomas@192.168.0.164:/home/thomas/Documents/Code/QuadStar/Calibration/Rsync-Images/{test_name}_exp{exp_time}_{datetime.now()}/"
-        collect_data(exp_time, 5, f"{exp_time}"+f"{datetime.now()}", wide_cam=True, demosaic=False, rsync_to=rsync_dir) # demosaic isn't needed here because it is done during analysis.
+        collect_data(exp_time, 5, f"{exp_time}"+f"{datetime.now()}", wide_cam=True, demosaic_image=False, rsync_to=rsync_dir) # demosaic isn't needed here because it is done during analysis.
     elif mode == "-a" :
         print("======================\nAnalysis Mode")
         analyse()
