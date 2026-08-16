@@ -128,6 +128,9 @@ def plot_histogram(img_array, plotname, xlog=False, ylog=False, clip=False) :
     import os
     os.makedirs("plots", exist_ok=True)
     os.makedirs(f"plots/{plotname}/", exist_ok=True)
+    os.makedirs(f"plots/histograms/", exist_ok=True)
+    os.makedirs(f"plots/ROI_images/", exist_ok=True)
+    os.makedirs(f"plots/Full_images/", exist_ok=True)
     plot_path = f"plots/{plotname}/Image-Mean{mean}_ROI{ROI}_{plotname}_{now.day}-{now.month}-{now.hour}:{now.minute}:{now.second}"
     plt.savefig(f"{plot_path}.png")
     save_tiff(img_array, plot_path)

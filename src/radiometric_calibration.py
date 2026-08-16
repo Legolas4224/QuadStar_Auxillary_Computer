@@ -8,12 +8,9 @@ from datetime import datetime, timedelta
 
 def demosaic(img_path) : #, output_path) :
     import cv2
-
-
     # 1. Load the raw TIFF image exactly as it is stored (grayscale + native bit depth)
     # IMREAD_ANYDEPTH handles 8-bit, 12-bit, or 16-bit TIFF files natively.
     raw_img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE | cv2.IMREAD_ANYDEPTH)
-
     # 2. Convert the Bayer pattern to standard BGR color
     # Change COLOR_BAYER_RG2BGR to match your specific camera sensor array if needed (e.g., BG, GR, GB)
     color_img = cv2.cvtColor(raw_img, cv2.COLOR_BAYER_RG2BGR)
@@ -44,7 +41,6 @@ def combine_data(csv_path, image_dir) : # This looks through all the images and 
             hours = dayhours.split("-")[-1]
             image_timedelta = pd.to_timedelta(f"{hours}:{mins}:{secs}")
 
-
             # Find closest CSV timestamp
             idx = (df["time"] - image_timedelta).abs().idxmin()
             
@@ -63,11 +59,7 @@ def combine_data(csv_path, image_dir) : # This looks through all the images and 
                 power = row["Power (W)"]
                 irradiance = row["Irradiance (W/cm²)"]
                 power_dbm = row["Power (dBm)"]
-
                 roi_file = file.replace("_full", "")
-
-
-
                 files_dict[time] = [file, roi_file, power, irradiance, power_dbm]
     #pprint(files_dict)
     print(f"Images successfully correlated with OPM Log.")
@@ -92,10 +84,6 @@ def calc_stats(files_dict) :
         #plot_histogram(image, "debayertest", ROI=False)
         #image = load_tiff(image)
         img_array = image
-        #print("Mean: ", np.mean(img_array))
-        #print("Median: ", np.median(img_array))
-        #print("Max: ", np.max(img_array))
-        #print("Min: ", np.min(img_array))
         median = np.median(img_array)
         mean = np.mean(img_array)
         R_mean, G_mean, B_mean = np.mean(img_array, axis=(0,1))
@@ -176,17 +164,8 @@ def main(choose_dirs=True) :
     files_dict = combine_data(csv_path=csv_path, image_dir=image_dir)
     stats = calc_stats(files_dict)
 
-    #stats.plot(y="Mean R", x="Irradiance (W/cm^2)", kind="scatter")
-    #stats.plot(y="Mean G", x="Irradiance (W/cm^2)", kind="scatter")
-    #stats.plot(y="Mean B", x="Irradiance (W/cm^2)", kind="scatter")
-    #title = f"Mean ADU vs Irradiance with 1s exposures-{datetime.now()}"
-    #plt.title(title)
-    #plt.savefig(f"/home/thomas/Documents/Code/QuadStar/Calibration/saved_plots/{title}.png")
-    #plt.show()
-
     x = stats["Irradiance (W/cm^2)"]
     y_array = [stats["Mean R"], stats["Mean G"], stats["Mean B"]]
-
 
     plt.scatter(x, stats["Mean R"], color="red", label="Mean R")
     plt.scatter(x, stats["Mean G"], color="green", label="Mean G")

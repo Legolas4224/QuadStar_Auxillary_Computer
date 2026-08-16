@@ -34,7 +34,7 @@ def main(exposure_time, test_name=f"{exposure_time}"+f"{datetime.now()}", send_t
     
     ROI_array = hist.extract_ROI(image)
     tp.live_plot(ROI_array)
-    #plot_path, stats = hist.plot_histogram(ROI_array, f"{capture_name}", xlog=False, ylog=True) # plots the histogram of the image, including adding ROI. calculates image stats
+    plot_path, stats = hist.plot_histogram(ROI_array, f"{test_name}", xlog=False, ylog=True) # plots the histogram of the image, including adding ROI. calculates image stats
     #                                                                      
     #print("plot path", plot_path)                                       
     #shutil.copy(image_path, f"{plot_path}_full.tiff")           # copies the image to the same dir as the plot and cropped image
