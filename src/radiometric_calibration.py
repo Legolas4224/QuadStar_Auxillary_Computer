@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import glob
 from pprint import pprint
 from histogram import load_tiff, plot_histogram
+import histogram as hist
 from datetime import datetime, timedelta
 
 def demosaic(img_path) : #, output_path) :
@@ -148,10 +149,78 @@ def file_gui(input_prompt, is_dir=True, filetype=[("CSV Files", "*.csv")]) :
     else:
         print("User cancelled the operation.")
 
+def rsync_files(source, destination) :
+    import subprocess
+    # Define the command as a list of arguments
+    command = [
+        "rsync",
+        "-avz",        # Archive mode, verbose, compress data
+        #"--delete",    # Delete extraneous files from dest dirs
+        source,
+        destination
+    ]
+    
+    try:
+        # execute the command and wait for it to complete
+        result = subprocess.run(command, check=True, text=True, capture_output=True)
+        print("Rsync completed successfully!")
+        print("Output:\n", result.stdout)
+        
+    except subprocess.CalledProcessError as e:
+        print(f"Rsync failed with exit code {e.returncode}")
+        print("Error output:\n", e.stderr)
+
+
+
 
 #demosaic("/home/thomas/Documents/Code/QuadStar/Calibration/plots/0.5/Image-Mean27970.8592_ROI(100, 100)_0.5_12-8-15:58:52.tiff", "/home/thomas/Documents/Code/QuadStar/Calibration/DebayerTest/test.tiff")
 
-def main(choose_dirs=True) :
+def collect_data(exposure_time, num_exposures, test_name=f"{exposure_time}"+f"{datetime.now()}", rsync_to="~/Documents/Code/QuadStar/Calibration/" ,send_to_me=True, make_histo=True, wide_cam=False, demosaic=True) :
+    input("Press ENTER to begin capture. Make sure OPM is logging first!...")
+    print("Running image sensor calibration!")
+    print(f"Capturing image, exposure: {exposure_time}s")
+
+    from main import main_manual as capture # do this here because it only works on rpi so we don't want to run it always
+    
+    files = []
+    for i in range(0, num_exposures) :
+        image_dir = capture(exposure_time, 1.0, 1, wide_cam=wide_cam) # takes image and returns save path
+        print(f"Image saved as: {image_dir}")   
+        files.append(image_dir) 
+        rsync_files(image_dir, rsync_to)
+    print("Capture and sync complete")
+                                        
+        #files = sorted(glob.glob(f"{image_dir}/*"))         # finds files in image dir 
+        #if not demosaic : 
+        #    image = hist.load_tiff(files[0]) 
+        #else : 
+        #    image = demosaic(files[0])
+
+    # At this point, the images have and we have a list of their locations on the Pi.
+    # Now we need to send it to the user's local machine so it can be analysed with the OPM data.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    ROI_array = hist.extract_ROI(image)
+    #tp.live_plot(ROI_array)
+    plot_path, stats = hist.plot_histogram(ROI_array, f"{test_name}", xlog=False, ylog=True)
+
+
+def analyse(choose_dirs=True) :
     if choose_dirs :
         csv_path = file_gui("OPM Log csv", is_dir=False)
         image_dir = file_gui("Image Directory", is_dir=True)
@@ -180,7 +249,21 @@ def main(choose_dirs=True) :
 
 
 if __name__ == "__main__" :
-    main()
+    run = True
+    while run :
+        mode = int(input("Choose a mode:\n 1: Capture\n 2. Analyse"))
+
+        if mode == 1 :
+            test_name = input("Test name: ")
+            exp_time = float(input("Enter exposure time (s): "))
+            print(f"Default rsync save path: ~/Documents/Code/QuadStar/Calibration/")
+            if input("Do you want to sync the image files to a different directory? (y/n)") == 'y' :
+                rsync_dir = " ~/Documents/Code/Quadstar/" + input(f"Where? ~/Documents/Code/Quadstar/")
+                print(f"Saving to: {rsync_dir}")
+
+            collect_data(exp_time, 5, test_name, wide_cam=True, demosaic=False, rsync_to=rsync_dir) # demosaic isn't needed here because it is done during analysis.
+        elif mode == 2 :
+            print("Analysis Mode")
 
 
 
