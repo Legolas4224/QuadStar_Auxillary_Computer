@@ -107,7 +107,7 @@ def calc_stats(files_dict) :
             mean_list_R.append(R_mean)
             mean_list_G.append(G_mean)
             mean_list_B.append(B_mean)
-    image_dir
+    
     stats_dict = {
         #"image" : image_list,
         #"Median ADU" : median_list,
