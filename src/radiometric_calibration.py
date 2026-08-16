@@ -6,6 +6,7 @@ from pprint import pprint
 from histogram import load_tiff, plot_histogram
 import histogram as hist
 from datetime import datetime, timedelta
+import sys
 
 def demosaic(img_path) : #, output_path) :
     import cv2
@@ -106,7 +107,7 @@ def calc_stats(files_dict) :
             mean_list_R.append(R_mean)
             mean_list_G.append(G_mean)
             mean_list_B.append(B_mean)
-    
+    image_dir
     stats_dict = {
         #"image" : image_list,
         #"Median ADU" : median_list,
@@ -175,7 +176,7 @@ def rsync_files(source, destination) :
 
 #demosaic("/home/thomas/Documents/Code/QuadStar/Calibration/plots/0.5/Image-Mean27970.8592_ROI(100, 100)_0.5_12-8-15:58:52.tiff", "/home/thomas/Documents/Code/QuadStar/Calibration/DebayerTest/test.tiff")
 
-def collect_data(exposure_time, num_exposures, test_name=f"{exposure_time}"+f"{datetime.now()}", rsync_to="~/Documents/Code/QuadStar/Calibration/" ,send_to_me=True, make_histo=True, wide_cam=False, demosaic=True) :
+def collect_data(exposure_time, num_exposures, test_name, rsync_to="~/Documents/Code/QuadStar/Calibration/" ,send_to_me=True, make_histo=True, wide_cam=False, demosaic=True) :
     input("Press ENTER to begin capture. Make sure OPM is logging first!...")
     print("Running image sensor calibration!")
     print(f"Capturing image, exposure: {exposure_time}s")
@@ -186,8 +187,9 @@ def collect_data(exposure_time, num_exposures, test_name=f"{exposure_time}"+f"{d
     for i in range(0, num_exposures) :
         image_dir = capture(exposure_time, 1.0, 1, wide_cam=wide_cam) # takes image and returns save path
         print(f"Image saved as: {image_dir}")   
-        files.append(image_dir) 
-        rsync_files(image_dir, rsync_to)
+        files.append(image_dir)
+        image_file = image_dir+"/"
+        rsync_files(image_file, rsync_to)
     print("Capture and sync complete")
                                         
         #files = sorted(glob.glob(f"{image_dir}/*"))         # finds files in image dir 
@@ -215,9 +217,9 @@ def collect_data(exposure_time, num_exposures, test_name=f"{exposure_time}"+f"{d
 
 
     
-    ROI_array = hist.extract_ROI(image)
+    #ROI_array = hist.extract_ROI(image)
     #tp.live_plot(ROI_array)
-    plot_path, stats = hist.plot_histogram(ROI_array, f"{test_name}", xlog=False, ylog=True)
+    #plot_path, stats = hist.plot_histogram(ROI_array, f"{test_name}", xlog=False, ylog=True)
 
 
 def analyse(choose_dirs=True) :
@@ -251,19 +253,20 @@ def analyse(choose_dirs=True) :
 if __name__ == "__main__" :
     run = True
     while run :
-        mode = int(input("Choose a mode:\n 1: Capture\n 2. Analyse"))
+        mode = int(sys.argv[1])     #int(input("Choose a mode:\n1: Capture\n2: Analyse\nSelection: "))
 
         if mode == 1 :
             test_name = input("Test name: ")
             exp_time = float(input("Enter exposure time (s): "))
             print(f"Default rsync save path: ~/Documents/Code/QuadStar/Calibration/")
             if input("Do you want to sync the image files to a different directory? (y/n)") == 'y' :
-                rsync_dir = " ~/Documents/Code/Quadstar/" + input(f"Where? ~/Documents/Code/Quadstar/")
+                rsync_dir = "192.168.0.164:/home/thomas/Documents/Code/QuadStar/" + input(f"Where? 192.168.0.164:~/Documents/Code/Quadstar/")
                 print(f"Saving to: {rsync_dir}")
-
-            collect_data(exp_time, 5, test_name, wide_cam=True, demosaic=False, rsync_to=rsync_dir) # demosaic isn't needed here because it is done during analysis.
+            else :
+                rsync_dir = f"thomas@192.168.0.164:/home/thomas/Documents/Code/QuadStar/Calibration/Rsync-Images/{test_name}_exp{exp_time}_{datetime.now()}/"
+            collect_data(exp_time, 5, f"{exp_time}"+f"{datetime.now()}", wide_cam=True, demosaic=False, rsync_to=rsync_dir) # demosaic isn't needed here because it is done during analysis.
         elif mode == 2 :
             print("Analysis Mode")
-
+            analyse()
 
 
