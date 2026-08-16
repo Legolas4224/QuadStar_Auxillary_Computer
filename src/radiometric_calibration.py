@@ -7,6 +7,7 @@ from histogram import load_tiff, plot_histogram
 import histogram as hist
 from datetime import datetime, timedelta
 import sys
+import terminal_plotter as tp
 
 def demosaic(img_path) : #, output_path) :
     import cv2
@@ -69,26 +70,24 @@ def combine_data(csv_path, image_dir) : # This looks through all the images and 
 
 
 def calc_stats(files_dict) :
-    #print(files_dict)
     image_list = []
     median_list = []
     irradiance_list = []
-    mean_list = []
+
     mean_list_R = []
     mean_list_G = []
     mean_list_B = []
 
+    median_list_R = []
+    median_list_G = []
+    median_list_B = []
+
     for entry in files_dict.values() :
         image = entry[1]
-        #print(image)
         image = demosaic(image)
-        #print(np.shape(image))
-        #plot_histogram(image, "debayertest", ROI=False)
-        #image = load_tiff(image)
         img_array = image
-        median = np.median(img_array)
-        mean = np.mean(img_array)
         R_mean, G_mean, B_mean = np.mean(img_array, axis=(0,1))
+        R_median, G_median, B_median = np.median(img_array, axis=(0,1))
         #print(f"Red mean: {R_mean}")
         #print(f"Green mean: {G_mean}")
         #print(f"Blue mean: {B_mean}")
@@ -101,12 +100,15 @@ def calc_stats(files_dict) :
         #    pass
         else :
             image_list.append(image)
-            median_list.append(median)
             irradiance_list.append(irradiance)
-            mean_list.append(mean)
+           
             mean_list_R.append(R_mean)
             mean_list_G.append(G_mean)
             mean_list_B.append(B_mean)
+        
+            median_list_R.append(R_median)
+            median_list_G.append(G_median)
+            median_list_B.append(B_median)
     
     stats_dict = {
         #"image" : image_list,
@@ -114,6 +116,9 @@ def calc_stats(files_dict) :
         "Mean R" : mean_list_R,
         "Mean G" : mean_list_G,
         "Mean B" : mean_list_B,
+        "Median R" : median_list_R,
+        "Median G" : median_list_G,
+        "Median B" : median_list_B,
         "Irradiance (W/cm^2)" : irradiance_list
     }
 
@@ -192,34 +197,15 @@ def collect_data(exposure_time, num_exposures, test_name, rsync_to="~/Documents/
         rsync_files(image_file, rsync_to)
     print("Capture and sync complete")
                                         
-        #files = sorted(glob.glob(f"{image_dir}/*"))         # finds files in image dir 
-        #if not demosaic : 
-        #    image = hist.load_tiff(files[0]) 
-        #else : 
-        #    image = demosaic(files[0])
+    files = sorted(glob.glob(f"{image_dir}/*"))         # finds files in image dir 
+    if not demosaic : 
+        image = hist.load_tiff(files[0]) 
+    else : 
+        image = demosaic(files[0])
 
-    # At this point, the images have and we have a list of their locations on the Pi.
-    # Now we need to send it to the user's local machine so it can be analysed with the OPM data.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    #ROI_array = hist.extract_ROI(image)
-    #tp.live_plot(ROI_array)
-    #plot_path, stats = hist.plot_histogram(ROI_array, f"{test_name}", xlog=False, ylog=True)
+    ROI_array = hist.extract_ROI(image)
+    tp.live_plot(ROI_array)
+  
 
 
 def analyse(choose_dirs=True) :
@@ -252,21 +238,26 @@ def analyse(choose_dirs=True) :
 
 if __name__ == "__main__" :
     run = True
-    while run :
-        mode = int(sys.argv[1])     #int(input("Choose a mode:\n1: Capture\n2: Analyse\nSelection: "))
+    try :
+        mode = (sys.argv[1])     #int(input("Choose a mode:\n1: Capture\n2: Analyse\nSelection: "))
+    except :
+        print("Oosp! You didn't specify a mode. Do you are have stupid?")
+        mode = input("Use '-c' for capture mode (run on the Pi)\nUse '-a' for analyse mode (run locally)\nMode: ")
+        print("Next time put it in the command args, silly!")
 
-        if mode == 1 :
-            test_name = input("Test name: ")
-            exp_time = float(input("Enter exposure time (s): "))
-            print(f"Default rsync save path: ~/Documents/Code/QuadStar/Calibration/")
-            if input("Do you want to sync the image files to a different directory? (y/n)") == 'y' :
-                rsync_dir = "192.168.0.164:/home/thomas/Documents/Code/QuadStar/" + input(f"Where? 192.168.0.164:~/Documents/Code/Quadstar/")
-                print(f"Saving to: {rsync_dir}")
-            else :
-                rsync_dir = f"thomas@192.168.0.164:/home/thomas/Documents/Code/QuadStar/Calibration/Rsync-Images/{test_name}_exp{exp_time}_{datetime.now()}/"
-            collect_data(exp_time, 5, f"{exp_time}"+f"{datetime.now()}", wide_cam=True, demosaic=False, rsync_to=rsync_dir) # demosaic isn't needed here because it is done during analysis.
-        elif mode == 2 :
-            print("Analysis Mode")
-            analyse()
+    if mode == "-c" :
+        print("======================\nCapture Mode")
+        test_name = input("Test name: ")
+        exp_time = float(input("Enter exposure time (s): "))
+        print(f"Default rsync save path: ~/Documents/Code/QuadStar/Calibration/")
+        if input("Do you want to sync the image files to a different directory? (y/n)") == 'y' :
+            rsync_dir = "192.168.0.164:/home/thomas/Documents/Code/QuadStar/" + input(f"Where? 192.168.0.164:~/Documents/Code/Quadstar/")
+            print(f"Saving to: {rsync_dir}")
+        else :
+            rsync_dir = f"thomas@192.168.0.164:/home/thomas/Documents/Code/QuadStar/Calibration/Rsync-Images/{test_name}_exp{exp_time}_{datetime.now()}/"
+        collect_data(exp_time, 5, f"{exp_time}"+f"{datetime.now()}", wide_cam=True, demosaic=False, rsync_to=rsync_dir) # demosaic isn't needed here because it is done during analysis.
+    elif mode == "-a" :
+        print("======================\nAnalysis Mode")
+        analyse()
 
 
