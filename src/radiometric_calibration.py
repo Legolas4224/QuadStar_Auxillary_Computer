@@ -17,7 +17,7 @@ def demosaic(img_path) : #, output_path) :
     # 2. Convert the Bayer pattern to standard BGR color
     # Change COLOR_BAYER_RG2BGR to match your specific camera sensor array if needed (e.g., BG, GR, GB)
     color_img = cv2.cvtColor(raw_img, cv2.COLOR_BAYER_RG2BGR)
-    print(f"Image successfully demosaiced")
+    #print(f"Image successfully demosaiced")
     # 3. Save the debayered RGB image 
     #cv2.imwrite(output_path, color_img)
     return color_img
