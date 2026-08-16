@@ -27,10 +27,10 @@ def combine_data(csv_path, image_dir) : # This looks through all the images and 
     #end_sample
     df = pd.read_csv(csv_path, skiprows=14)
     df["time"] = pd.to_timedelta(df["Time of day (hh:mm:ss) "])
-    print(df)
+    #print(df)
     
     files = sorted(glob.glob(f"{image_dir}/*.tiff"))
-    print(f"{len(files)}")
+    print(f"Found {len(files)} image files")
     files_dict = {}
     for file in files:
         
@@ -49,16 +49,16 @@ def combine_data(csv_path, image_dir) : # This looks through all the images and 
             idx = (df["time"] - image_timedelta).abs().idxmin()
             
             row = df.loc[idx]
-            print(f"time: {row["time"]}")
-            print(f"image time: {image_timedelta}")
+            #print(f"time: {row["time"]}")
+            #print(f"image time: {image_timedelta}")
             time_difference = abs(row["time"]-image_timedelta)
             if time_difference > timedelta(seconds=1) :
                 print(f"Delta too large between image and measurement. Not including datapoint")
             else :
 
 
-                print(f"Time delta: {time_difference}")
-                print(f"Found closest match for image {file}:")#\n{row}\n--------")
+                #print(f"Time delta: {time_difference}")
+                #print(f"Found closest match for image {file}:")#\n{row}\n--------")
             
                 power = row["Power (W)"]
                 irradiance = row["Irradiance (W/cm²)"]
@@ -69,7 +69,8 @@ def combine_data(csv_path, image_dir) : # This looks through all the images and 
 
 
                 files_dict[time] = [file, roi_file, power, irradiance, power_dbm]
-    pprint(files_dict)
+    #pprint(files_dict)
+    print(f"Images successfully correlated with OPM Log.")
     return files_dict
 
 
@@ -85,7 +86,7 @@ def calc_stats(files_dict) :
 
     for entry in files_dict.values() :
         image = entry[1]
-        print(image)
+        #print(image)
         image = demosaic(image)
         #print(np.shape(image))
         #plot_histogram(image, "debayertest", ROI=False)
@@ -98,9 +99,9 @@ def calc_stats(files_dict) :
         median = np.median(img_array)
         mean = np.mean(img_array)
         R_mean, G_mean, B_mean = np.mean(img_array, axis=(0,1))
-        print(f"Red mean: {R_mean}")
-        print(f"Green mean: {G_mean}")
-        print(f"Blue mean: {B_mean}")
+        #print(f"Red mean: {R_mean}")
+        #print(f"Green mean: {G_mean}")
+        #print(f"Blue mean: {B_mean}")
         irradiance = entry[3]
         if irradiance == np.inf :
             pass
@@ -128,14 +129,50 @@ def calc_stats(files_dict) :
 
     
     stats_df = pd.DataFrame(stats_dict)
-    print("stats df" , stats_df)
+    #print("stats df" , stats_df)
     return stats_df
 
-#demosaic("/home/thomas/Documents/Code/QuadStar/Calibration/plots/0.5/Image-Mean27970.8592_ROI(100, 100)_0.5_12-8-15:58:52.tiff", "/home/thomas/Documents/Code/QuadStar/Calibration/DebayerTest/test.tiff")
-def main() :
-    csv_path = "/home/thomas/Documents/Code/QuadStar/Calibration/OPM-Logs/0.5s_02.csv"      #"/home/thomas/Documents/Code/QuadStar/NewQuadstar/QuadStar_Auxillary_Computer/plots/Calibrations/0.4s_clean.csv"#"/home/thomas/Pictures/Quadstar/Calibration/plots/0.3/585mm-0.3sTest_cleaned.csv"
-    image_dir = "/home/thomas/Documents/Code/QuadStar/Calibration/plots/0.5/"
+def file_gui(input_prompt, is_dir=True, filetype=[("CSV Files", "*.csv")]) :
+    import tkinter as tk
+    from tkinter import filedialog
 
+    # Create a root window and hide it
+    root = tk.Tk()
+    root.withdraw()
+
+    # Open the directory chooser dialog box
+    if is_dir :
+        selected_path = filedialog.askdirectory(
+            title=f"{input_prompt}",
+            initialdir="/home/thomas/Documents/Code/QuadStar/Calibration/plots/"
+        )
+    else :
+        selected_path = filedialog.askopenfilename(
+            title=f"{input_prompt}",
+            initialdir="/home/thomas/Documents/Code/QuadStar/Calibration/OPM-Logs/", # Optional: Sets the starting directory
+            filetypes = filetype
+        )
+
+    # Print or process the selected string path
+    if selected_path :
+        print(f"Selected directory: {selected_path}")
+        return selected_path  
+    else:
+        print("User cancelled the operation.")
+
+
+#demosaic("/home/thomas/Documents/Code/QuadStar/Calibration/plots/0.5/Image-Mean27970.8592_ROI(100, 100)_0.5_12-8-15:58:52.tiff", "/home/thomas/Documents/Code/QuadStar/Calibration/DebayerTest/test.tiff")
+
+def main(choose_dirs=True) :
+    if choose_dirs :
+        csv_path = file_gui("OPM Log csv", is_dir=False)
+        image_dir = file_gui("Image Directory", is_dir=True)
+    else :
+        csv_path = "/home/thomas/Documents/Code/QuadStar/Calibration/OPM-Logs/0.5s_02.csv"      #"/home/thomas/Documents/Code/QuadStar/NewQuadstar/QuadStar_Auxillary_Computer/plots/Calibrations/0.4s_clean.csv"#"/home/thomas/Pictures/Quadstar/Calibration/plots/0.3/585mm-0.3sTest_cleaned.csv"
+        image_dir = "/home/thomas/Documents/Code/QuadStar/Calibration/plots/0.5/"
+    
+    exptime = image_dir.split("/")[-2]
+    print(f"Found image exposure time from directory name: {exptime}")
     files_dict = combine_data(csv_path=csv_path, image_dir=image_dir)
     stats = calc_stats(files_dict)
 
@@ -157,7 +194,14 @@ def main() :
 
     plt.xlabel("Irradiance (W/cm^2)")
     plt.ylabel("Mean ADU")
-    plt.title("Mean ADU vs Irradiance with 0.5s exposures")
+    plt.title(f"Mean ADU vs Irradiance with {exptime}s exposures")
     plt.legend()
-    plt.savefig(f"/home/thomas/Documents/Code/QuadStar/Calibration/saved_plots/Mean_ADU_vs_Irradiance_{datetime.now()}.png")
+    plt.savefig(f"/home/thomas/Documents/Code/QuadStar/Calibration/saved_plots/Mean_ADU_vs_Irradiance_{exptime}_{datetime.now()}.png")
     plt.show()
+
+
+if __name__ == "__main__" :
+    main()
+
+
+
