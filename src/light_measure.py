@@ -25,6 +25,21 @@ CORRECTION_WAVELENGTH: int = 635
 
 
 class LightMeasure:
+    """
+    Need to allow write permissions for device:
+    $ sudo tee /etc/udev/rules.d/99-thorlabs-pm100.rules > /dev/null <<'EOF'
+        SUBSYSTEM=="usb", ATTR{idVendor}=="1313", ATTR{idProduct}=="8072", MODE="0666"
+        EOF
+    $ sudo udevadm control --reload-rules
+    $ sudo udevadm trigger
+
+    Then check with:
+    $ ls -l /dev/bus/usb/001/005   # adjust bus/device numbers to match `lsusb
+
+    Also maybe:
+    $ echo "blacklist usbtmc" | sudo tee /etc/modprobe.d/usbtmc-blacklist.conf
+    """
+
     def __init__(self):
         self.rm = pyvisa.ResourceManager()
         self.inst = self.rm.open_resource(ADAPTER)
