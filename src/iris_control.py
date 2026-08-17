@@ -17,7 +17,7 @@ class Iris:
 
         self.position: float = MIN_OPEN
         self.index: int = 0
-        self.step: float = OPEN_RANGE / num_exposures
+        self.step: float = OPEN_RANGE / num_exposures # This needs to be updated to reflect the area change rather than the diameter
         self.pos_array = [MIN_OPEN + (self.step * i) for i in range(num_exposures)]
         print(self.pos_array)
         self.stage.home()
