@@ -3,7 +3,7 @@ from ThorlabsPM100 import ThorlabsPM100
 import math
 
 
-def calculate_irradience(power_watts: int) -> float:
+def calculate_irradiance(power_watts: int) -> float:
 
     SENSOR_DIAMETER_CM: float = 9.5 / 10  # mm to cm
     AREA_CM2 = math.pi * ((SENSOR_DIAMETER_CM / 2.0) ** 2)  # approx 0.7088cm^2
@@ -50,7 +50,7 @@ class LightMeasure:
 
     def read_irradiance(self) -> float:
         watts = self.power_meter.read
-        return calculate_irradience(watts)
+        return calculate_irradiance(watts)
 
 
 def main():
@@ -61,7 +61,7 @@ def main():
 
     while True:
         print(
-            f"\033[2K\r{meas.read_irradience()}W/cm^2", end="", flush=True
+            f"\033[2K\r{meas.read_irradiance()}W/cm^2", end="", flush=True
         )  ## clears line
         time.sleep(0.5)
 
