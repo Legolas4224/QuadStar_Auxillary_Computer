@@ -8,6 +8,8 @@ import histogram as hist
 from datetime import datetime, timedelta
 import sys
 import terminal_plotter as tp
+from iris_control import Iris
+from light_measure import LightMeasure
 
 def demosaic(img_path) : #, output_path) :
     import cv2
@@ -187,9 +189,16 @@ def collect_data(exposure_time, num_exposures, test_name, rsync_to="~/Documents/
     print(f"Capturing image, exposure: {exposure_time}s")
 
     from main import main_manual as capture # do this here because it only works on rpi so we don't want to run it always
+
+    iris = Iris(num_exposures)
+    light_measure = LightMeasure()
+
     
     files = []
     for i in range(0, num_exposures) :
+        iris.set(i)
+        irrad = light_measure.read_irradiance()
+        print(f"Irradiance (W/cm^2): {irrad}")
         image_dir = capture(exposure_time, 1.0, 1, wide_cam=wide_cam) # takes image and returns save path
         print(f"Image saved as: {image_dir}")   
         files.append(image_dir)
@@ -248,14 +257,15 @@ if __name__ == "__main__" :
     if mode == "-c" :
         print("======================\nCapture Mode")
         test_name = input("Test name: ")
+        num_exposures = int(input("How many exposures?: "))
         exp_time = float(input("Enter exposure time (s): "))
         print(f"Default rsync save path: ~/Documents/Code/QuadStar/Calibration/")
         if input("Do you want to sync the image files to a different directory? (y/n)") == 'y' :
             rsync_dir = "192.168.0.164:/home/thomas/Documents/Code/QuadStar/" + input(f"Where? 192.168.0.164:~/Documents/Code/Quadstar/")
             print(f"Saving to: {rsync_dir}")
         else :
-            rsync_dir = f"thomas@192.168.0.164:/home/thomas/Documents/Code/QuadStar/Calibration/Rsync-Images/{test_name}_exp{exp_time}_{datetime.now()}/"
-        collect_data(exp_time, 5, f"{exp_time}"+f"{datetime.now()}", wide_cam=True, demosaic_image=False, rsync_to=rsync_dir) # demosaic isn't needed here because it is done during analysis.
+            rsync_dir = f"thomas@10.229.169.96:/home/thomas/Documents/Code/QuadStar/Calibration/Rsync-Images/{test_name}_exp{exp_time}_{datetime.now()}/"
+        collect_data(exp_time, num_exposures, f"{exp_time}"+f"{datetime.now()}", wide_cam=False, demosaic_image=False, rsync_to=rsync_dir) # demosaic isn't needed here because it is done during analysis.
     elif mode == "-a" :
         print("======================\nAnalysis Mode")
         analyse()

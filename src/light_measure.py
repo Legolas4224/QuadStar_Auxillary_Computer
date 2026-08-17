@@ -33,7 +33,7 @@ class LightMeasure:
         self.power_meter = ThorlabsPM100(inst=self.inst)
         self.power_meter.sense.correction.wavelength = CORRECTION_WAVELENGTH
 
-    def read_irradience(self) -> float:
+    def read_irradiance(self) -> float:
         watts = self.power_meter.read
         return calculate_irradience(watts)
 
@@ -53,3 +53,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # print_adapter()
