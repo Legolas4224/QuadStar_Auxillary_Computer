@@ -16,7 +16,8 @@ python src/main.py 10 1.0 1
 python src/auto_exposure.py
 
 # 'Heartbeat' image
-mkdir -p /home/pi/Heartbeats
-rpicam-still --camera 0 --zsl --shutter 500ms --gain 1.0 --awbgains 1,1 -o /home/pi/Heartbeats/Heartbeat_$(date '+%s').png
+HEARTBEAT_DIR="/home/pi/Heartbeats"
+mkdir -p "$HEARTBEAT_DIR"
+rpicam-still --camera 0 --zsl --shutter 500ms --gain 1.0 --awbgains 1,1 -o "$HEARTBEAT_DIR"/Heartbeat_$(date '+%s').png
 
 echo "All exposures captured"

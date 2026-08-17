@@ -1,7 +1,14 @@
+## Running/Using
+- Designed for use on a Raspberry Pi 5 running Raspberry Pi OS Lite (trixie), although should work on most other Raspberry Pis 
+- For quadstar.service to run you must be using at least 1 Raspberry Pi Camera, we are using the HQ version as out camera \#0 and the wide v3 was \#1 
+- Currently the install.sh script installs most dependencies but other may be needed. (We should really go through and fix 
+this). Have had some issues with python not seeing libcamera.
+- Alot of paths in the shell scripts are hardcoded eg '/home/pi/images'.
+
 notes:
     if the picam is not connected when booted it WILL NOT connect until you reboot!
 
-### QuadSolver
+### Using QuadSolver
 
 QuadSolver is a module that :
 1. Converts raw image files to FITS format
@@ -31,3 +38,5 @@ python3 src/platesolving/QuadSolver.py \
 
 #### Limitations:
 While QuadSolver is perfect, it isn't yet perfect.
+
+
