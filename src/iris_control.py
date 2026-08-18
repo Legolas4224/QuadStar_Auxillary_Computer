@@ -1,5 +1,6 @@
 import thorlabs_elliptec
 import time
+import numpy as np
 
 MIN_OPEN: float = 1.0
 MAX_OPEN: float = 11.5
@@ -7,19 +8,29 @@ OPEN_RANGE: float = MAX_OPEN - MIN_OPEN
 VID: int = 0x0403
 PID: int = 0x6015
 
+MIN_AREA: float = np.pi() * ((MIN_OPEN/2)**2)
+MAX_AREA: float = np.pi() * ((MAX_OPEN/2)**2)
+AREA_RANGE: float = MAX_AREA - MIN_AREA
+
+def diameter_from_area(area:float) -> float :
+    diameter  = 2 * np.sqrt((area/np.pi()))
+    return diameter
 
 class Iris:
     def __init__(self, num_exposures: int):
 
         # print(thorlabs_elliptec.list_devices())
-        self.stage = thorlabs_elliptec.ELLx(vid=VID, pid=PID)
+        #self.stage = thorlabs_elliptec.ELLx(vid=VID, pid=PID)
         # print(f"#{stage.model_number}, #{stage.device_id}")
 
         self.position: float = MIN_OPEN
         self.index: int = 0
-        self.step: float = OPEN_RANGE / num_exposures # This needs to be updated to reflect the area change rather than the diameter
-        self.pos_array = [MIN_OPEN + (self.step * i) for i in range(num_exposures)]
+        self.step: float = AREA_RANGE / num_exposures # This needs to be updated to reflect the area change rather than the diameter
+        self.area_array = [MIN_AREA + (self.step * i) for i in range(num_exposures)]
+        self.pos_array = [diameter_from_area(area) for area in self.area_array]
         print(self.pos_array)
+        print(self.area_array)
+        exit()
         self.stage.home()
 
     def set(self, index: int):
