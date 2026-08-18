@@ -10,6 +10,7 @@ import sys
 import terminal_plotter as tp
 from iris_control import Iris
 from light_measure import LightMeasure
+import os
 
 def demosaic(img_path) : #, output_path) :
     import cv2
@@ -23,6 +24,21 @@ def demosaic(img_path) : #, output_path) :
     # 3. Save the debayered RGB image 
     #cv2.imwrite(output_path, color_img)
     return color_img
+
+def testdemosaic(path):
+    print(f"Demosaicing: {path}")
+    print(f"Exists: {os.path.exists(path)}")
+
+    raw_img = cv2.imread(path, cv2.IMREAD_UNCHANGED)
+
+    print(f"Loaded: {raw_img is not None}")
+    if raw_img is not None:
+        print(f"Shape: {raw_img.shape}")
+        print(f"Dtype: {raw_img.dtype}")
+
+    color_img = cv2.cvtColor(raw_img, cv2.COLOR_BAYER_RG2BGR)
+    return color_img
+
 
 def combine_data(csv_path, image_dir) : # This looks through all the images and finds the closest datapoint from the csv. It then makes a dictionary with all the relevant info
     #start_time = 0
@@ -197,24 +213,32 @@ def collect_data(exposure_time, num_exposures, test_name, rsync_to="~/Documents/
     files = []
     for i in range(0, num_exposures) :
         iris.set(i)
+        time.sleep(0.5)
         irrad = light_measure.read_irradiance()
         print(f"Irradiance (W/cm^2): {irrad}")
         image_dir = capture(exposure_time, 1.0, 1, wide_cam=wide_cam) # takes image and returns save path
-        print(f"Image saved as: {image_dir}")   
+        print(f"Image saved as: {image_dir}")  
+        
+        
+        
+
         files.append(image_dir)
         image_file = image_dir+"/"
         rsync_files(image_file, rsync_to)
-        #demosaic_image = True                                    
-        #files = sorted(glob.glob(f"{image_dir}+'/*'"))         # finds files in image dir 
-        #if demosaic_image == False : 
-        #    image = hist.load_tiff(files) 
-        #else : 
-        #    image = demosaic(files)
-        #    print("demosaiced image")
-        #ROI_array = hist.extract_ROI(image)
-        #tp.live_plot(ROI_array)
+        demosaic_image = True                                    
+        files = [f"{image_dir}/{f}" for f in os.listdir(image_dir) if os.path.isfile(os.path.join(image_dir, f))]
+        #sorted(glob.glob(image_file))         # finds files in image dir 
+        print(files[0])
+        if demosaic_image == False : 
+            image = hist.load_tiff(files[0]) 
+        else : 
+            image = demosaic(files[0])
+            print("demosaiced image")
+        ROI_array = hist.extract_ROI(image)
+        tp.live_plot(ROI_array)
     print("Capture and sync complete")
 
+#def local_analyse(image_path) :
 
 
 def analyse(choose_dirs=True) :

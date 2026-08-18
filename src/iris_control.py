@@ -60,6 +60,7 @@ class Iris:
 
 
 def main():
+    print(thorlabs_elliptec.list_devices())
     iris = Iris(50)
 
     for i in range(50):
