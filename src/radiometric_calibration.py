@@ -208,7 +208,12 @@ def collect_data(exposure_time, num_exposures, test_name, rsync_to="~/Documents/
 
     iris = Iris(num_exposures)
     light_measure = LightMeasure()
-
+    stats = {
+        "irradiance" : [],
+        "median_R" : [],
+        "median_G" : [],
+        "median_B" : [],
+    }
     
     files = []
     for i in range(0, num_exposures) :
@@ -236,10 +241,44 @@ def collect_data(exposure_time, num_exposures, test_name, rsync_to="~/Documents/
             print("demosaiced image")
         ROI_array = hist.extract_ROI(image)
         tp.live_plot(ROI_array)
+        stats["median_R"].append(np.median(ROI_array[:,:, 0].ravel()))
+        stats["median_G"].append(np.median(ROI_array[:,:, 1].ravel()))
+        stats["median_B"].append(np.median(ROI_array[:,:, 2].ravel()))
+        stats["irradiance"].append(irrad)
+
+
     print("Capture and sync complete")
+    print(f"Stats dict: {stats}")
 
 #def local_analyse(image_path) :
+def live_analyse(stats) :
+    if choose_dirs :
+        csv_path = file_gui("OPM Log csv", is_dir=False)
+        image_dir = file_gui("Image Directory", is_dir=True)
+    else :
+        csv_path = "/home/thomas/Documents/Code/QuadStar/Calibration/OPM-Logs/0.5s_02.csv"      #"/home/thomas/Documents/Code/QuadStar/NewQuadstar/QuadStar_Auxillary_Computer/plots/Calibrations/0.4s_clean.csv"#"/home/thomas/Pictures/Quadstar/Calibration/plots/0.3/585mm-0.3sTest_cleaned.csv"
+        image_dir = "/home/thomas/Documents/Code/QuadStar/Calibration/plots/0.5/"
+    
+    exptime = image_dir.split("/")[-2]
+    print(f"Found image exposure time from directory name: {exptime}")
+    files_dict = combine_data(csv_path=csv_path, image_dir=image_dir)
+    stats = calc_stats(files_dict)
 
+    
+
+    x = stats["Irradiance (W/cm^2)"]
+    y_array = [stats["Mean R"], stats["Mean G"], stats["Mean B"]]
+
+    plt.scatter(x, stats["Mean R"], color="red", label="Mean R")
+    plt.scatter(x, stats["Mean G"], color="green", label="Mean G")
+    plt.scatter(x, stats["Mean B"], color="blue", label="Mean B")
+
+    plt.xlabel("Irradiance (W/cm^2)")
+    plt.ylabel("Mean ADU")
+    plt.title(f"Mean ADU vs Irradiance with {exptime}s exposures")
+    plt.legend()
+    plt.savefig(f"/home/thomas/Documents/Code/QuadStar/Calibration/saved_plots/Mean_ADU_vs_Irradiance_{exptime}_{datetime.now()}.png")
+    plt.show()
 
 def analyse(choose_dirs=True) :
     if choose_dirs :
@@ -253,6 +292,8 @@ def analyse(choose_dirs=True) :
     print(f"Found image exposure time from directory name: {exptime}")
     files_dict = combine_data(csv_path=csv_path, image_dir=image_dir)
     stats = calc_stats(files_dict)
+
+
 
     x = stats["Irradiance (W/cm^2)"]
     y_array = [stats["Mean R"], stats["Mean G"], stats["Mean B"]]
