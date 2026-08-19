@@ -203,6 +203,7 @@ def rsync_files(source, destination) :
 
 def adjust_light_source(exposure_time) : # This function is to work out how bright the light source should be for a run of a given exp time
     from main import main_manual as capture
+    wide_cam = False
     iris = Iris(2)
     light_measure = LightMeasure()
     stats = {
@@ -214,9 +215,11 @@ def adjust_light_source(exposure_time) : # This function is to work out how brig
     }
     
     files = []
-
+    
     iris.set_max()
     time.sleep(0.5)
+    irrad = light_measure.read_irradiance()
+    print(f"Irradiance (W/cm^2): {irrad}")
     image_dir = capture(exposure_time, 1.0, 1, wide_cam=wide_cam) # takes image and returns save path
     print(f"Image saved as: {image_dir}")  
     files.append(image_dir)
@@ -248,11 +251,11 @@ def adjust_light_source(exposure_time) : # This function is to work out how brig
     deltamax_blue = np.max(blue_pixels) - np.min(blue_pixels)
     print(f"Deltamaxes: r({deltamax_red}), g({deltamax_green}), b({deltamax_blue})")
 
-    if stats["median_R"] > 2**16 :
+    if stats["median_R"][-1] > (2**16 -1000):
         print("Red Channel Clipped")
-    if stats["median_G"] > 2**16 :
+    if stats["median_G"][-1] > (2**16 -1000):
         print("Green Channel Clipped")
-    if stats["median_B"] > 2**16 :
+    if stats["median_B"][-1] > (2**16 - 1000) :
         print("Blue Channel Clipped")
 
     else :
