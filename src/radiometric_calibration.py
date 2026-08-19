@@ -26,6 +26,23 @@ def demosaic(img_path) : #, output_path) :
     #cv2.imwrite(output_path, color_img)
     return color_img
 
+def extract_cfa(img_path):
+    import cv2
+    raw = cv2.imread(
+        img_path,
+        cv2.IMREAD_GRAYSCALE | cv2.IMREAD_ANYDEPTH
+    )
+
+    if raw is None:
+        raise ValueError(f"Could not read {img_path}")
+
+    R  = raw[0::2, 0::2]
+    G1 = raw[0::2, 1::2]
+    G2 = raw[1::2, 0::2]
+    B  = raw[1::2, 1::2]
+
+    return R, G1, G2, B
+
 def testdemosaic(path):
     print(f"Demosaicing: {path}")
     print(f"Exists: {os.path.exists(path)}")
@@ -292,7 +309,7 @@ def collect_data(exposure_time, num_exposures, test_name, rsync_to="~/Documents/
     files = []
     for i in range(0, num_exposures) :
         iris.set(i)
-        time.sleep(0.5)
+        time.sleep(1)
         irrad = light_measure.read_irradiance()
         print(f"Irradiance (W/cm^2): {irrad}")
         image_dir = capture(exposure_time, 1.0, 1, wide_cam=wide_cam) # takes image and returns save path
@@ -303,7 +320,7 @@ def collect_data(exposure_time, num_exposures, test_name, rsync_to="~/Documents/
 
         files.append(image_dir)
         image_file = image_dir+"/"
-        # rsync_files(image_file, rsync_to)
+        rsync_files(image_file, rsync_to)
         demosaic_image = True                                    
         files = [f"{image_dir}/{f}" for f in os.listdir(image_dir) if os.path.isfile(os.path.join(image_dir, f))]
         #sorted(glob.glob(image_file))         # finds files in image dir 
@@ -334,7 +351,9 @@ def collect_data(exposure_time, num_exposures, test_name, rsync_to="~/Documents/
     print("Capture and sync complete")
     print(f"Stats dict: {stats}")
     stats_df = pd.DataFrame(stats)
-    stats_df.to_csv(f"/home/pi/QuadStar_Auxillary_Computer/CalibrationData/Radiometric_Calibration/csv/{test_name}_{exposure_time}_{datetime.now()}.csv", index=False)
+    csv_path = f"/home/pi/QuadStar_Auxillary_Computer/CalibrationData/Radiometric_Calibration/csv/{test_name}_{exposure_time}_{datetime.now()}.csv"
+    stats_df.to_csv(csv_path, index=False)
+    rsync_files(csv_path, rsync_to)
     live_analyse(stats)
     tp.plot_medians(stats)
 
@@ -417,7 +436,7 @@ if __name__ == "__main__" :
             rsync_dir = "192.168.0.164:/home/thomas/Documents/Code/QuadStar/" + input(f"Where? 192.168.0.164:~/Documents/Code/Quadstar/")
             print(f"Saving to: {rsync_dir}")
         else :
-            rsync_dir = f"thomas@10.229.169.96:/home/thomas/Documents/Code/QuadStar/Calibration/Rsync-Images/{test_name}_exp{exp_time}_{datetime.now()}/"
+            rsync_dir = f"thomas@10.114.172.96:/home/thomas/Documents/Code/QuadStar/Calibration/Rsync-Images/{test_name}_exp{exp_time}_{datetime.now()}/"
         collect_data(exp_time, num_exposures, f"{exp_time}"+f"{datetime.now()}", wide_cam=False, demosaic_image=False, rsync_to=rsync_dir) # demosaic isn't needed here because it is done during analysis.
     elif mode == "-a" :
         print("======================\nAnalysis Mode")
