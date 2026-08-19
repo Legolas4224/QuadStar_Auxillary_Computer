@@ -216,51 +216,55 @@ def adjust_light_source(exposure_time) : # This function is to work out how brig
     
     files = []
     
-    iris.set_max()
-    time.sleep(0.5)
-    irrad = light_measure.read_irradiance()
-    print(f"Irradiance (W/cm^2): {irrad}")
-    image_dir = capture(exposure_time, 1.0, 1, wide_cam=wide_cam) # takes image and returns save path
-    print(f"Image saved as: {image_dir}")  
-    files.append(image_dir)
-    image_file = image_dir+"/"
-    # rsync_files(image_file, rsync_to)
-    demosaic_image = True                                    
-    files = [f"{image_dir}/{f}" for f in os.listdir(image_dir) if os.path.isfile(os.path.join(image_dir, f))]
-    #sorted(glob.glob(image_file))         # finds files in image dir 
-    print(files[0])
-    if demosaic_image == False : 
-        image = hist.load_tiff(files[0]) 
-    else : 
-        image = demosaic(files[0])
-        print("demosaiced image")
-    ROI_array = hist.extract_ROI(image)
-    tp.live_plot(ROI_array)
+    while True :
+        iris.set_max()
+        time.sleep(0.5)
+        irrad = light_measure.read_irradiance()
+        print(f"Irradiance (W/cm^2): {irrad}")
+        image_dir = capture(exposure_time, 1.0, 1, wide_cam=wide_cam) # takes image and returns save path
+        print(f"Image saved as: {image_dir}")  
+        files.append(image_dir)
+        image_file = image_dir+"/"
+        # rsync_files(image_file, rsync_to)
+        demosaic_image = True                                    
+        files = [f"{image_dir}/{f}" for f in os.listdir(image_dir) if os.path.isfile(os.path.join(image_dir, f))]
+        #sorted(glob.glob(image_file))         # finds files in image dir 
+        print(files[0])
+        if demosaic_image == False : 
+            image = hist.load_tiff(files[0]) 
+        else : 
+            image = demosaic(files[0])
+            print("demosaiced image")
+        ROI_array = hist.extract_ROI(image)
+        tp.live_plot(ROI_array)
 
-    red_pixels = ROI_array[:,:, 0].ravel()
-    green_pixels = ROI_array[:,:, 1].ravel()
-    blue_pixels = ROI_array[:,:, 2].ravel()
+        red_pixels = ROI_array[:,:, 0].ravel()
+        green_pixels = ROI_array[:,:, 1].ravel()
+        blue_pixels = ROI_array[:,:, 2].ravel()
 
-    stats["median_R"].append(np.median(red_pixels))
-    stats["median_G"].append(np.median(green_pixels))
-    stats["median_B"].append(np.median(blue_pixels))
-    stats["irradiance"].append(irrad)
+        stats["median_R"].append(np.median(red_pixels))
+        stats["median_G"].append(np.median(green_pixels))
+        stats["median_B"].append(np.median(blue_pixels))
+        stats["irradiance"].append(irrad)
 
-    deltamax_red = np.max(red_pixels) - np.min(red_pixels)
-    deltamax_green = np.max(green_pixels) - np.min(green_pixels)
-    deltamax_blue = np.max(blue_pixels) - np.min(blue_pixels)
-    print(f"Deltamaxes: r({deltamax_red}), g({deltamax_green}), b({deltamax_blue})")
+        deltamax_red = np.max(red_pixels) - np.min(red_pixels)
+        deltamax_green = np.max(green_pixels) - np.min(green_pixels)
+        deltamax_blue = np.max(blue_pixels) - np.min(blue_pixels)
+        print(f"Deltamaxes: r({deltamax_red}), g({deltamax_green}), b({deltamax_blue})")
 
-    if stats["median_R"][-1] > (2**16 -1000):
-        print("Red Channel Clipped")
-    if stats["median_G"][-1] > (2**16 -1000):
-        print("Green Channel Clipped")
-    if stats["median_B"][-1] > (2**16 - 1000) :
-        print("Blue Channel Clipped")
+        if stats["median_R"][-1] > (2**16 -1000):
+            print("Red Channel Clipped")
+            input("Press enter when adjustment is complete: ")
+        if stats["median_G"][-1] > (2**16 -1000):
+            print("Green Channel Clipped")
+            input("Press enter when adjustment is complete: ")
+        if stats["median_B"][-1] > (2**16 - 1000) :
+            print("Blue Channel Clipped")
+            input("Press enter when adjustment is complete: ")
 
-    else :
-        print("No channels clipped")
-
+        else :
+            print("No channels clipped, brighten light source")
+            input("Press enter when adjustment is complete: ")
 
     #print("Capture and sync complete")
     #print(f"Stats dict: {stats}")
