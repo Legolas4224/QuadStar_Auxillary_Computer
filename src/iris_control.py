@@ -59,6 +59,19 @@ class Iris:
         self.stage.move_absolute(self.position)
 
 
+    def set_absolute(self, diameter):
+        self.position = diameter
+        self.stage.move_absolute(self.position)
+    
+    def set_max(self):
+        self.position = MAX_OPEN
+        self.stage.move_absolute(self.position)
+
+    def set_min(self):
+        self.position = MIN_OPEN
+        self.stage.move_absolute(self.position)
+
+
 def main():
     print(thorlabs_elliptec.list_devices())
     iris = Iris(50)
