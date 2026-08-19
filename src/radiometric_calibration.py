@@ -241,6 +241,7 @@ def collect_data(exposure_time, num_exposures, test_name, rsync_to="~/Documents/
             print("demosaiced image")
         ROI_array = hist.extract_ROI(image)
         tp.live_plot(ROI_array)
+        tiffile.imwrite(f'{/home/pi/roicheck}.tiff', ROI_array)
         stats["median_R"].append(np.median(ROI_array[:,:, 0].ravel()))
         stats["median_G"].append(np.median(ROI_array[:,:, 1].ravel()))
         stats["median_B"].append(np.median(ROI_array[:,:, 2].ravel()))
@@ -268,6 +269,7 @@ def live_analyse(stats) :
 
     x = stats["Irradiance (W/cm^2)"]
     y_array = [stats["Mean R"], stats["Mean G"], stats["Mean B"]]
+    x = stats[""]
 
     plt.scatter(x, stats["Mean R"], color="red", label="Mean R")
     plt.scatter(x, stats["Mean G"], color="green", label="Mean G")

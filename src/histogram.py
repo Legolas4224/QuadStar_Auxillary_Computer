@@ -78,7 +78,7 @@ def extract_ROI(img, ROI=(100,100)) :
 
 
 def plot_histogram(img_array, plotname, xlog=False, ylog=False, clip=False) :
-    
+    ROI=(100,100)
     print("Mean: ", np.mean(img_array))
     print("Median: ", np.median(img_array))
     print("Max: ", np.max(img_array))
@@ -176,22 +176,25 @@ def main(exp) :
         path = "/home/thomas/Documents/Code/QuadStar/Images/20260810_183233_e-30.0_g-1.0_n-5.solve/Ex6999327_(30.0s)_Gain1.0_Temp13.0_1786350760.9048686.tiff"
     elif exp == 1 :
         path = "/home/thomas/Documents/Code/QuadStar/Images/ceiling_tiffs/Ex999982_(1.0s)_Gain1.0_Temp15.0_1785924314.6876094.tiff"
+    elif exp == 60 :
+        path = "/home/thomas/Documents/Code/QuadStar/Calibration/Rsync-Images/center_exp0.5_2026-08-18 13:28:03.029460/Ex499991_(0.5s)_Gain1.0_Temp24.0_1787023691.028857.tiff" #"/home/thomas/Documents/Code/QuadStar/Ex499991_(0.5s)_Gain1.0_Temp22.0_1787022744.1324.tiff"#/home/thomas/Documents/Code/QuadStar/Ex499991_(0.5s)_Gain1.0_Temp25.0_1787022486.6049216.tiff"#/home/thomas/Documents/Code/QuadStar/Calibration/Rsync-Images/lots_exp0.5_2026-08-18 12:37:20.369269/Ex499991_(0.5s)_Gain1.0_Temp25.0_1787020705.8377333.tiff"
+
 
     print("loading image of exp time:", exp, "s")
-    path = "/home/thomas/Pictures/Quadstar/Calibration/plots/Old/Image-0.15_11-8-12:2:49.tiff"
+    #path = "/home/thomas/Pictures/Quadstar/Calibration/plots/Old/Image-0.15_11-8-12:2:49.tiff"
     image = load_tiff(path)
 
     plotname = f"exp_{exp}s"
-    
-    plot_histogram(image, plotname, ROI=(100,100))
+    img = extract_ROI(image, ROI=(100,100))
+    plot_histogram(img, plotname)
 
 if __name__ == "__main__" :
-    #main(30)
-    import sys
-    exp = float(sys.argv[1])
-    capture_name = sys.argv[2]
-    print(f"Capturing {exp}s Image...\n")
-    stats_dict = capture_to_histo(exp, capture_name)
-    print("Capture Complete\n==============")
-    print(f"Median: {stats_dict['Median']}\nMean: {stats_dict['Mean']}")
+    main(60)
+    #import sys
+    #exp = float(sys.argv[1])
+    #capture_name = sys.argv[2]
+    #print(f"Capturing {exp}s Image...\n")
+    #stats_dict = capture_to_histo(exp, capture_name)
+    #print("Capture Complete\n==============")
+    #print(f"Median: {stats_dict['Median']}\nMean: {stats_dict['Mean']}")
     #plot_histogram()
