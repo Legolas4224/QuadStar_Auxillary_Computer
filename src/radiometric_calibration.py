@@ -281,6 +281,7 @@ def collect_data(exposure_time, num_exposures, test_name, rsync_to="~/Documents/
     iris = Iris(num_exposures)
     light_measure = LightMeasure()
     stats = {
+        "image_dir" : [],
         "irradiance" : [],
         "median_R" : [],
         "median_G" : [],
@@ -296,7 +297,7 @@ def collect_data(exposure_time, num_exposures, test_name, rsync_to="~/Documents/
         print(f"Irradiance (W/cm^2): {irrad}")
         image_dir = capture(exposure_time, 1.0, 1, wide_cam=wide_cam) # takes image and returns save path
         print(f"Image saved as: {image_dir}")  
-        
+        stats["image_dir"].append(image_dir)
         
         
 
@@ -332,6 +333,8 @@ def collect_data(exposure_time, num_exposures, test_name, rsync_to="~/Documents/
 
     print("Capture and sync complete")
     print(f"Stats dict: {stats}")
+    stats_df = pd.DataFrame(stats)
+    stats_df.to_csv(f"/home/pi/QuadStar_Auxillary_Computer/CalibrationData/Radiometric_Calibration/csv/{test_name}_{exposure_time}_{datetime.now()}.csv", index=False)
     live_analyse(stats)
     tp.plot_medians(stats)
 
