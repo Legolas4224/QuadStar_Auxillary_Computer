@@ -16,7 +16,7 @@ import contextlib
 #print("Capture Complete\n==============")
 #print(f"Median: {stats_dict['Median']}\nMean: {stats_dict['Mean']}")
 
-exposure_time = 0.1
+exposure_time = 0.5
 
 def main(exposure_time, test_name=f"{exposure_time}"+f"{datetime.now()}", send_to_me=True, make_histo=True, wide_cam=False, demosaic=True) :
     print("Running image sensor calibration - don't forget to start OPM measurements!")
@@ -89,4 +89,4 @@ def load(filepath, demosaic=True) :
         tp.live_plot(ROI_array)
         time.sleep(1)
 
-live(0.01, "test") 
+live(0.5, "test") 

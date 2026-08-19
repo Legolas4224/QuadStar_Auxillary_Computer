@@ -51,5 +51,21 @@ def view_image(img):
     plt.image_plot("./_temp.png")
     plt.show()
 
+def plot_medians(stats):
+
+    irrad = stats["irradiance"]
+    plt.clear_figure()
+    plt.plot(irrad, stats["median_R"], color="red", label="R")
+    plt.plot(irrad, stats["median_G"], color="green", label="G")
+    plt.plot(irrad, stats["median_B"], color="blue", label="B")
+
+    plt.theme('matrix')
+
+    plt.clear_terminal()
+    plt.title("Sensor data")
+    plt.xlabel("Sample")
+    plt.ylabel("Value")
+    plt.show()
+
     
     

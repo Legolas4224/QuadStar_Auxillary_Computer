@@ -11,6 +11,7 @@ import terminal_plotter as tp
 from iris_control import Iris
 from light_measure import LightMeasure
 import os
+import time
 
 def demosaic(img_path) : #, output_path) :
     import cv2
@@ -213,6 +214,7 @@ def collect_data(exposure_time, num_exposures, test_name, rsync_to="~/Documents/
         "median_R" : [],
         "median_G" : [],
         "median_B" : [],
+        "exp_time" : exposure_time,
     }
     
     files = []
@@ -229,7 +231,7 @@ def collect_data(exposure_time, num_exposures, test_name, rsync_to="~/Documents/
 
         files.append(image_dir)
         image_file = image_dir+"/"
-        rsync_files(image_file, rsync_to)
+        # rsync_files(image_file, rsync_to)
         demosaic_image = True                                    
         files = [f"{image_dir}/{f}" for f in os.listdir(image_dir) if os.path.isfile(os.path.join(image_dir, f))]
         #sorted(glob.glob(image_file))         # finds files in image dir 
@@ -241,46 +243,58 @@ def collect_data(exposure_time, num_exposures, test_name, rsync_to="~/Documents/
             print("demosaiced image")
         ROI_array = hist.extract_ROI(image)
         tp.live_plot(ROI_array)
-        stats["median_R"].append(np.median(ROI_array[:,:, 0].ravel()))
-        stats["median_G"].append(np.median(ROI_array[:,:, 1].ravel()))
-        stats["median_B"].append(np.median(ROI_array[:,:, 2].ravel()))
+
+        red_pixels = ROI_array[:,:, 0].ravel()
+        green_pixels = ROI_array[:,:, 1].ravel()
+        blue_pixels = ROI_array[:,:, 2].ravel()
+
+        stats["median_R"].append(np.median(red_pixels))
+        stats["median_G"].append(np.median(green_pixels))
+        stats["median_B"].append(np.median(blue_pixels))
         stats["irradiance"].append(irrad)
+
+        deltamax_red = np.max(red_pixels) - np.min(red_pixels)
+        deltamax_green = np.max(green_pixels) - np.min(green_pixels)
+        deltamax_blue = np.max(blue_pixels) - np.min(blue_pixels)
+        print(f"Deltamaxes: r({deltamax_red}), g({deltamax_green}), b({deltamax_blue})")
 
 
     print("Capture and sync complete")
     print(f"Stats dict: {stats}")
+    live_analyse(stats)
+    tp.plot_medians(stats)
 
 #def local_analyse(image_path) :
 def live_analyse(stats) :
-    if choose_dirs :
-        csv_path = file_gui("OPM Log csv", is_dir=False)
-        image_dir = file_gui("Image Directory", is_dir=True)
-    else :
-        csv_path = "/home/thomas/Documents/Code/QuadStar/Calibration/OPM-Logs/0.5s_02.csv"      #"/home/thomas/Documents/Code/QuadStar/NewQuadstar/QuadStar_Auxillary_Computer/plots/Calibrations/0.4s_clean.csv"#"/home/thomas/Pictures/Quadstar/Calibration/plots/0.3/585mm-0.3sTest_cleaned.csv"
-        image_dir = "/home/thomas/Documents/Code/QuadStar/Calibration/plots/0.5/"
-    
-    exptime = image_dir.split("/")[-2]
-    print(f"Found image exposure time from directory name: {exptime}")
-    files_dict = combine_data(csv_path=csv_path, image_dir=image_dir)
-    stats = calc_stats(files_dict)
+    # if choose_dirs :
+    #     csv_path = file_gui("OPM Log csv", is_dir=False)
+    #     image_dir = file_gui("Image Directory", is_dir=True)
+    # else :
+    #     csv_path = "/home/thomas/Documents/Code/QuadStar/Calibration/OPM-Logs/0.5s_02.csv"      #"/home/thomas/Documents/Code/QuadStar/NewQuadstar/QuadStar_Auxillary_Computer/plots/Calibrations/0.4s_clean.csv"#"/home/thomas/Pictures/Quadstar/Calibration/plots/0.3/585mm-0.3sTest_cleaned.csv"
+    #     image_dir = "/home/thomas/Documents/Code/QuadStar/Calibration/plots/0.5/"
+    #
+    # exptime = image_dir.split("/")[-2]
+    # print(f"Found image exposure time from directory name: {exptime}")
+    # files_dict = combine_data(csv_path=csv_path, image_dir=image_dir)
+    # stats = calc_stats(files_dict)
 
-    
+    exptime = stats["exp_time"]    
 
-    x = stats["Irradiance (W/cm^2)"]
-    y_array = [stats["Mean R"], stats["Mean G"], stats["Mean B"]]
+    x = stats["irradiance"]
+    y_array = [stats["median_R"], stats["median_G"], stats["median_B"]]
 
-    plt.scatter(x, stats["Mean R"], color="red", label="Mean R")
-    plt.scatter(x, stats["Mean G"], color="green", label="Mean G")
-    plt.scatter(x, stats["Mean B"], color="blue", label="Mean B")
+    plt.scatter(x, stats["median_R"], color="red", label="Median R")
+    plt.scatter(x, stats["median_G"], color="green", label="Median G")
+    plt.scatter(x, stats["median_B"], color="blue", label="Median B")
 
     plt.xlabel("Irradiance (W/cm^2)")
-    plt.ylabel("Mean ADU")
-    plt.title(f"Mean ADU vs Irradiance with {exptime}s exposures")
+    plt.ylabel("Median ADU")
+    plt.title(f"Median ADU vs Irradiance with {exptime}s exposures")
     plt.legend()
-    plt.savefig(f"/home/thomas/Documents/Code/QuadStar/Calibration/saved_plots/Mean_ADU_vs_Irradiance_{exptime}_{datetime.now()}.png")
+    plt.savefig(f"/home/pi/QuadStar_Auxillary_Computer/Median_ADU_vs_Irradiance_{exptime}_{datetime.now()}.png")
     plt.show()
 
-def analyse(choose_dirs=True) :
+def analyse(choose_dirs=True): 
     if choose_dirs :
         csv_path = file_gui("OPM Log csv", is_dir=False)
         image_dir = file_gui("Image Directory", is_dir=True)
