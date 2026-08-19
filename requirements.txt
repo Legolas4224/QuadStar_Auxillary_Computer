@@ -46,6 +46,7 @@ markdown-it-py==3.0.0
 MarkupSafe==2.1.5
 matplotlib==3.11.1
 mdurl==0.1.2
+msgpack==1.0.3
 networkx==3.6.1
 numpy==2.5.1
 oauthlib==3.2.2
@@ -64,13 +65,18 @@ pycryptodomex==3.20.0
 pyerfa==2.0.1.5
 Pygments==2.18.0
 PyJWT==2.10.1
+pynvim==0.5.2
 PyOpenGL==3.1.9
 pyparsing==3.3.2
 PyQt5==5.15.11
 PyQt5_sip==12.17.0
+pyserial==3.5
 python-apt==3.0.0
 python-dateutil==2.9.0
 python-prctl==1.8.1
+pyusb==1.3.1
+PyVISA==1.16.2
+PyVISA-py==0.8.1
 PyYAML==6.0.3
 rawpy==0.27.0
 referencing==0.36.2
@@ -92,6 +98,8 @@ smbus2==0.4.3
 spidev==3.6
 SQLAlchemy==2.0.52
 ssh-import-id==5.10
+thorlabs_elliptec==1.3.0
+ThorlabsPM100==1.2.2
 tifffile==2026.7.31
 tiffile==2018.10.18
 tqdm==4.70.0

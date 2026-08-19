@@ -252,19 +252,16 @@ def adjust_light_source(exposure_time) : # This function is to work out how brig
         deltamax_blue = np.max(blue_pixels) - np.min(blue_pixels)
         print(f"Deltamaxes: r({deltamax_red}), g({deltamax_green}), b({deltamax_blue})")
 
-        if stats["median_R"][-1] > (2**16 -1000):
-            print("Red Channel Clipped")
-            input("Press enter when adjustment is complete: ")
-        if stats["median_G"][-1] > (2**16 -1000):
-            print("Green Channel Clipped")
-            input("Press enter when adjustment is complete: ")
-        if stats["median_B"][-1] > (2**16 - 1000) :
-            print("Blue Channel Clipped")
-            input("Press enter when adjustment is complete: ")
+        if stats["median_R"][-1] > (2**16 -1000) and stats["median_G"][-1] > (2**16 - 1000) and stats["median_B"][-1] > (2**16 - 1000):
+            print("All channels clipped")
+            print("Continue adjusting until one channel starts appearing on the histogram again, then pull back a small amount.")
+            clip = True
+            input("Press ENTER once light source has been adjusted ") 
 
         else :
             print("No channels clipped, brighten light source")
             input("Press enter when adjustment is complete: ")
+        
 
     #print("Capture and sync complete")
     #print(f"Stats dict: {stats}")
