@@ -200,6 +200,73 @@ def rsync_files(source, destination) :
 
 #demosaic("/home/thomas/Documents/Code/QuadStar/Calibration/plots/0.5/Image-Mean27970.8592_ROI(100, 100)_0.5_12-8-15:58:52.tiff", "/home/thomas/Documents/Code/QuadStar/Calibration/DebayerTest/test.tiff")
 
+
+def adjust_light_source(exposure_time) : # This function is to work out how bright the light source should be for a run of a given exp time
+    from main import main_manual as capture
+    iris = Iris(2)
+    light_measure = LightMeasure()
+    stats = {
+        "irradiance" : [],
+        "median_R" : [],
+        "median_G" : [],
+        "median_B" : [],
+        "exp_time" : exposure_time,
+    }
+    
+    files = []
+
+    iris.set_max()
+    time.sleep(0.5)
+    image_dir = capture(exposure_time, 1.0, 1, wide_cam=wide_cam) # takes image and returns save path
+    print(f"Image saved as: {image_dir}")  
+    files.append(image_dir)
+    image_file = image_dir+"/"
+    # rsync_files(image_file, rsync_to)
+    demosaic_image = True                                    
+    files = [f"{image_dir}/{f}" for f in os.listdir(image_dir) if os.path.isfile(os.path.join(image_dir, f))]
+    #sorted(glob.glob(image_file))         # finds files in image dir 
+    print(files[0])
+    if demosaic_image == False : 
+        image = hist.load_tiff(files[0]) 
+    else : 
+        image = demosaic(files[0])
+        print("demosaiced image")
+    ROI_array = hist.extract_ROI(image)
+    tp.live_plot(ROI_array)
+
+    red_pixels = ROI_array[:,:, 0].ravel()
+    green_pixels = ROI_array[:,:, 1].ravel()
+    blue_pixels = ROI_array[:,:, 2].ravel()
+
+    stats["median_R"].append(np.median(red_pixels))
+    stats["median_G"].append(np.median(green_pixels))
+    stats["median_B"].append(np.median(blue_pixels))
+    stats["irradiance"].append(irrad)
+
+    deltamax_red = np.max(red_pixels) - np.min(red_pixels)
+    deltamax_green = np.max(green_pixels) - np.min(green_pixels)
+    deltamax_blue = np.max(blue_pixels) - np.min(blue_pixels)
+    print(f"Deltamaxes: r({deltamax_red}), g({deltamax_green}), b({deltamax_blue})")
+
+    if stats["median_R"] > 2**16 :
+        print("Red Channel Clipped")
+    if stats["median_G"] > 2**16 :
+        print("Green Channel Clipped")
+    if stats["median_B"] > 2**16 :
+        print("Blue Channel Clipped")
+
+    else :
+        print("No channels clipped")
+
+
+    #print("Capture and sync complete")
+    #print(f"Stats dict: {stats}")
+    #live_analyse(stats)
+    #tp.plot_medians(stats)
+
+
+
+
 def collect_data(exposure_time, num_exposures, test_name, rsync_to="~/Documents/Code/QuadStar/Calibration/" ,send_to_me=True, make_histo=True, wide_cam=False, demosaic_image=True) :
     input("Press ENTER to begin capture. Make sure OPM is logging first!...")
     print("Running image sensor calibration!")
@@ -348,5 +415,10 @@ if __name__ == "__main__" :
     elif mode == "-a" :
         print("======================\nAnalysis Mode")
         analyse()
+
+    elif mode == "-s" :
+        print("======================\nSetup Mode")
+        exp_time = float(input("What exposure time are you using?: "))
+        adjust_light_source(exposure_time=exp_time)
 
 
