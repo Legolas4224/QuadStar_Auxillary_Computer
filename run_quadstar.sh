@@ -7,7 +7,8 @@ images_dir="/home/pi/images/QuadStar"
 hang_timeout=360
 
 cd "$prog_dir" || { echo "Error: cannot cd to $prog_dir" >&2; exit 1; }
-source "$prog_dir/.venv/bin/activate" 
+source "$prog_dir/.venv/bin/activate"
+mkdir -p "$prog_dir"/logs
 
 cleanup () {
 	# echo "Cleaning up..." # is erroring with 'broken pipe'
@@ -22,8 +23,12 @@ worker_loop() {
 	while true; do
 		local start
 		start=$(date +%s)
+		local log_file
+		log_file="$prog_dir"/logs/"$name"_"$start".log 
 
-		setsid "$@" >/dev/null &
+		# setsid "$@" >/dev/null &
+
+		setsid "$@" > "$log_file" 2>&1 &
 		local cmd_pid=$!
 
 		{
@@ -56,10 +61,11 @@ solve_interval=120
 
 worker_loop "$capture_interval" capture ./capture.sh &
 sleep 5
-# worker_loop "$wide_capture_interval" wide_capture ./wide_capture.sh &
+worker_loop "$wide_capture_interval" wide_capture ./wide_capture.sh &
 sleep 5
 worker_loop "$solve_interval" solve ./solve.sh &
 
+sleep 5
 worker_loop "$zip_interval" zip_images ./zip_images.sh &
 worker_loop "$zip_interval" zip_wide_images ./zip_images.sh /home/pi/images/wide &
 

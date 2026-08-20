@@ -25,7 +25,7 @@ run_exposure() {
 	mkdir -p $folder
 	for i in $(seq "$n")
 	do
-		local flags="--camera $CAMERA_NUMBER --zsl --autofocus-mode manual --shutter $exposure_len_secs --lens-position 10.0 --gain 1.0 --awbgains 1,1  -o $folder/wide_"$i"_$(date '+%s').dng  --immediate --mode $LONG_SENSOR_MODE "
+		local flags="--camera $CAMERA_NUMBER --zsl --autofocus-mode manual --shutter $exposure_len_secs --lens-position 10.0 --gain 1.0 --awbgains 1,1  -o $folder/wide_"$i"_$(date '+%s').dng  --nopreview --immediate --mode $LONG_SENSOR_MODE "
 		echo "rpicam-still $flags"
 		rpicam-still $flags
 	done
@@ -34,6 +34,7 @@ run_exposure() {
 
 
 mkdir -p $CAM2_DIR
+export LIBCAMERA_LOG_LEVELS=3 # limit logs to errors
 
 run_exposure 0.25 10
 run_exposure 0.5 10
