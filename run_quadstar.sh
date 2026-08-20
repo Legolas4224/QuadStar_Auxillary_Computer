@@ -55,9 +55,9 @@ zip_interval=60
 solve_interval=120
 
 worker_loop "$capture_interval" capture ./capture.sh &
-wait 5
-worker_loop "$wide_capture_interval" wide_capture ./wide_capture.sh &
-
+sleep 5
+# worker_loop "$wide_capture_interval" wide_capture ./wide_capture.sh &
+sleep 5
 worker_loop "$solve_interval" solve ./solve.sh &
 
 worker_loop "$zip_interval" zip_images ./zip_images.sh &

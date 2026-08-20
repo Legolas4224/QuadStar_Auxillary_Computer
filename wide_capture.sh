@@ -3,7 +3,7 @@
 PROG_DIR="/home/pi/QuadStar_Auxillary_Computer"
 CAM2_DIR="/home/pi/images/wide"
 
-CAMERA_NUMBER=0 # normally will be 1 but can be 0 for testing
+CAMERA_NUMBER=1 # normally will be 1 but can be 0 for testing
 
 folder=""
 
