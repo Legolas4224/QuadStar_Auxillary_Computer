@@ -18,6 +18,8 @@ class CameraLogic:
     def __init__(
         self, manual=False, config=None, exposure=None, wide_cam: bool = False
     ):
+        os.environ["LIBCAMERA_LOG_LEVELS"] = "3"
+
         self.wide_cam = wide_cam
         if wide_cam == True :
             print("WARNING: CAMERA SET TO WIDECAM")
@@ -120,7 +122,7 @@ class CameraLogic:
         if self.wide_cam:
             prefix = "wide_"
 
-        capture_dir = f"/home/pi/images/QuadStar/{datetime.now():%Y%m%d_%H%M%S}_{prefix}e-{exposure_seconds}_g-{gain}_n-{num_exposures}.taking"
+        capture_dir = f"/home/pi/images/auto_exposure/{datetime.now():%Y%m%d_%H%M%S}_{prefix}e-{exposure_seconds}_g-{gain}_n-{num_exposures}.taking"
         os.makedirs(capture_dir, exist_ok=True)
 
         # Save raw image to file
@@ -145,12 +147,14 @@ class CameraLogic:
                 print(f"-- Warning: Actual and expected exposures not matched! --\n -> Actual Exposure: {meta_exposure_len}us\n -> Expected Exposure: {exposure_value}us")
 
             median = np.median(img_array)
-            max_pixel_value = 65520.0
+            max_pixel_value = 65520.0 if not self.wide_cam else 65472.0
+            max_pixel_value = 65472.0
             max_value = np.max(img_array)
+            value_95 = np.percentile(img_array, 95)
             count = np.sum(img_array == max_pixel_value)
             with open("/home/pi/QuadStar_Auxillary_Computer/img_median.csv", "a") as f:
                 writer = csv.writer(f)
-                writer.writerow([exposure_seconds, median, max_value, count])
+                writer.writerow([exposure_seconds, median, value_95, max_value, count])
 
         capture_dir_renamed = capture_dir.removesuffix(".taking") + ".solve"
         os.rename(capture_dir, capture_dir_renamed)
